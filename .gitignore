@@ -1,0 +1,16 @@
+# macOS / Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Artifacts
+dist/
+*.app
+
+# Local
+.DS_Store
+.swiftpm/
+方案-v1.md
