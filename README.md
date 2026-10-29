@@ -46,7 +46,7 @@
 ### 方式一：从源码构建（推荐）
 
 ```bash
-git clone https://github.com/<your-name>/transclase.git
+git clone https://github.com/JLZ0614/transclase.git
 cd transclase
 open Transclase.xcodeproj
 ```
