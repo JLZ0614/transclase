@@ -43,7 +43,24 @@
 
 ## 下载与安装
 
-### 方式一：从源码构建（推荐）
+### 方式一：直接下载（macOS，免编译）
+
+去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.0.0-macOS.zip`：
+
+1. 解压，得到 `Transclase.app`、`install.command`、`安装说明.txt`
+2. **右键** `install.command` → 打开 → 再点一次「打开」
+3. 脚本会装进「应用程序」并自动启动
+
+也可以手动：把 App 拖进「应用程序」，然后在终端执行
+`xattr -dr com.apple.quarantine /Applications/Transclase.app`
+
+> 为什么多这一步：这个包用的是临时签名（ad-hoc），没有 Apple 开发者签名与公证，
+> macOS 会给下载的文件打"隔离"标记。上面的操作只是去掉这个标记，不改动 App 内容。
+> 想要真正"双击即用"，需要开发者证书 + 公证，见下方「独立分发」。
+
+包是 Intel + Apple Silicon 通用二进制，但**语音识别需要 Apple Silicon**，Intel 机器只能跑演示模式。
+
+### 方式二：从源码构建
 
 ```bash
 git clone https://github.com/JLZ0614/transclase.git
@@ -55,7 +72,7 @@ open Transclase.xcodeproj
 
 macOS 版本地直接能跑（工程用了临时签名）。装到真机需要改签名，见下一节。
 
-### 方式二：装到 iPhone
+### 方式三：装到 iPhone
 
 1. Xcode 打开工程，点左侧 `Transclase` 项目 → **Signing & Capabilities**
 2. **Team** 选你的 Apple ID（没有就点 *Add an Account*，免费账号即可）
@@ -152,6 +169,18 @@ Translation（系统离线）→ 失败则 Apple 智能 → 再失败则仅原�
 ```
 
 两条通道写**同一行**：中间结果先上屏让你跟得上，句子结束后用更准的译文覆盖。
+
+## 独立分发（想要"下载即用"）
+
+现在这个 Release 能装能用，但首次需要手动去掉隔离标记。要做到**双击就打开**，需要：
+
+1. Apple Developer Program 账号（99 美元/年）
+2. 用 `Developer ID Application` 证书签名，并开启 Hardened Runtime
+3. 提交 `notarytool` 公证，通过后 `stapler staple` 钉在 App 上
+4. 打包成 DMG / zip 重新上传 Release
+
+流程一旦配好，可以放进 GitHub Actions 自动出包。iOS 端则只能走 App Store 或 TestFlight
+（需要同一账号，且要准备隐私政策与录音合规说明）。
 
 ## 已知限制
 
