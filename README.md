@@ -56,9 +56,18 @@ curl -fsSL https://raw.githubusercontent.com/JLZ0614/transclase/main/scripts/ins
 > macOS 就会拦"未验证的开发者"。`curl` 不会打这个标记，所以装完直接能双击。
 > 这不是绕过安全机制，只是换了个下载方式——App 本身仍然是沙盒化的。
 
-### 方式二：手动下载
+### 方式二：Homebrew
 
-去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.0.0-macOS.zip`：
+```bash
+brew install --cask JLZ0614/transclase/transclase
+```
+
+tap 在 [JLZ0614/homebrew-transclase](https://github.com/JLZ0614/homebrew-transclase)，
+升级用 `brew upgrade --cask transclase`，卸载用 `brew uninstall --cask transclase`。
+
+### 方式三：手动下载
+
+去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.0.1-macOS.zip`：
 
 1. 解压，得到 `Transclase.app`、`install.command`、`安装说明.txt`
 2. **右键** `install.command` → 打开 → 再点一次「打开」
@@ -70,7 +79,7 @@ curl -fsSL https://raw.githubusercontent.com/JLZ0614/transclase/main/scripts/ins
 > 包是 Intel + Apple Silicon 通用二进制，但**语音识别需要 Apple Silicon**，
 > Intel 机器只能跑演示模式。系统要求 macOS 26+。
 
-### 方式三：从源码构建
+### 方式四：从源码构建
 
 ```bash
 git clone https://github.com/JLZ0614/transclase.git
@@ -82,7 +91,7 @@ open Transclase.xcodeproj
 
 macOS 版本地直接能跑（工程用了临时签名）。装到真机需要改签名，见下一节。
 
-### 方式四：装到 iPhone
+### 方式五：装到 iPhone
 
 1. Xcode 打开工程，点左侧 `Transclase` 项目 → **Signing & Capabilities**
 2. **Team** 选你的 Apple ID（没有就点 *Add an Account*，免费账号即可）
