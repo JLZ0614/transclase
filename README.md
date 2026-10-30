@@ -70,14 +70,22 @@ tap 在 [JLZ0614/homebrew-transclase](https://github.com/JLZ0614/homebrew-transc
 去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.0.1-macOS.zip`：
 
 1. 解压，得到 `Transclase.app`、`install.command`、`安装说明.txt`
-2. **右键** `install.command` → 打开 → 再点一次「打开」
-3. 脚本会装进「应用程序」并自动启动
+2. 打开「终端」，`cd` 进解压出来的目录，执行 `bash install.command`
+
+> **不要双击 `install.command`**：从浏览器下载的脚本本身也带隔离标记，双击会被拦。
+> 用终端执行最稳。
 
 纯手动：把 App 拖进「应用程序」，再执行
 `xattr -dr com.apple.quarantine /Applications/Transclase.app`
 
+**如果已经被拦了**：macOS 15 起「右键 → 打开」不再管用。要走
+`系统设置 → 隐私与安全性` → 拉到底 → 找到被拦的 Transclase → **仍要打开**。
+
 > 包是 Intel + Apple Silicon 通用二进制，但**语音识别需要 Apple Silicon**，
 > Intel 机器只能跑演示模式。系统要求 macOS 26+。
+>
+> 包本身是完整的：解压后 2.9 MB，压缩后 935 KB。打不开是 Gatekeeper 拦的，
+> 不是缺文件——用 `find Transclase.app -type f` 可以看到完整的 6 个必需文件。
 
 ### 方式四：从源码构建
 
