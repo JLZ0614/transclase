@@ -43,7 +43,20 @@
 
 ## 下载与安装
 
-### 方式一：直接下载（macOS，免编译）
+### 方式一：一行命令安装（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JLZ0614/transclase/main/scripts/install.sh | bash
+```
+
+它会下载最新版、放进「应用程序」、并去掉隔离标记，然后自动打开。
+脚本很短，[可以点这里先读一遍](scripts/install.sh)。
+
+> 为什么用 `curl` 而不是浏览器下载：浏览器会给文件打上 `com.apple.quarantine` 标记，
+> macOS 就会拦"未验证的开发者"。`curl` 不会打这个标记，所以装完直接能双击。
+> 这不是绕过安全机制，只是换了个下载方式——App 本身仍然是沙盒化的。
+
+### 方式二：手动下载
 
 去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.0.0-macOS.zip`：
 
@@ -51,16 +64,13 @@
 2. **右键** `install.command` → 打开 → 再点一次「打开」
 3. 脚本会装进「应用程序」并自动启动
 
-也可以手动：把 App 拖进「应用程序」，然后在终端执行
+纯手动：把 App 拖进「应用程序」，再执行
 `xattr -dr com.apple.quarantine /Applications/Transclase.app`
 
-> 为什么多这一步：这个包用的是临时签名（ad-hoc），没有 Apple 开发者签名与公证，
-> macOS 会给下载的文件打"隔离"标记。上面的操作只是去掉这个标记，不改动 App 内容。
-> 想要真正"双击即用"，需要开发者证书 + 公证，见下方「独立分发」。
+> 包是 Intel + Apple Silicon 通用二进制，但**语音识别需要 Apple Silicon**，
+> Intel 机器只能跑演示模式。系统要求 macOS 26+。
 
-包是 Intel + Apple Silicon 通用二进制，但**语音识别需要 Apple Silicon**，Intel 机器只能跑演示模式。
-
-### 方式二：从源码构建
+### 方式三：从源码构建
 
 ```bash
 git clone https://github.com/JLZ0614/transclase.git
@@ -72,7 +82,7 @@ open Transclase.xcodeproj
 
 macOS 版本地直接能跑（工程用了临时签名）。装到真机需要改签名，见下一节。
 
-### 方式三：装到 iPhone
+### 方式四：装到 iPhone
 
 1. Xcode 打开工程，点左侧 `Transclase` 项目 → **Signing & Capabilities**
 2. **Team** 选你的 Apple ID（没有就点 *Add an Account*，免费账号即可）
