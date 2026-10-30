@@ -10,7 +10,10 @@
 set -euo pipefail
 
 REPO="JLZ0614/transclase"
-VERSION="${TRANSCLASE_VERSION:-1.0.0}"
+# 默认取 GitHub 上最新的 Release 标签，失败则回退到内置版本
+VERSION="${TRANSCLASE_VERSION:-$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
+  | sed -n 's/.*"tag_name": *"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' | head -1)}"
+[ -n "$VERSION" ] || VERSION="1.0.1"
 DEST="${TRANSCLASE_DEST:-/Applications}"
 APP_NAME="Transclase.app"
 

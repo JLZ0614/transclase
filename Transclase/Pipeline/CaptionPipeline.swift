@@ -90,7 +90,7 @@ final class CaptionPipeline {
         } else if useFoundationModel {
             translator = FoundationModelTranslationEngine(
                 sourceName: LanguageMapping.displayName(forBCP47: settings.sourceLanguageID),
-                targetName: LanguageMapping.displayName(forBCP47: settings.targetLanguageID),
+                targetName: LanguageMapping.promptName(for: settings.targetLanguageID),
                 glossary: settings.glossary
             )
         } else {
@@ -246,7 +246,8 @@ final class CaptionPipeline {
             defer { self.pendingFinalTranslations = max(0, self.pendingFinalTranslations - 1) }
             do {
                 let raw = try await mt.translate(text)
-                let translated = self.glossary.apply(to: raw, sourceText: text)
+                let glossed = self.glossary.apply(to: raw, sourceText: text)
+                let translated = ChineseVariant.normalized(glossed, for: self.settings.targetLanguageID)
                 self.finishTranslation(id: id, text: text, translated: translated)
             } catch {
                 self.failTranslation(id: id, text: text, message: error.localizedDescription)
@@ -270,7 +271,8 @@ final class CaptionPipeline {
             _ = await previous?.value
             guard let self else { return }
             guard let raw = try? await mt.translate(text) else { return }
-            let translated = self.glossary.apply(to: raw, sourceText: text)
+            let glossed = self.glossary.apply(to: raw, sourceText: text)
+            let translated = ChineseVariant.normalized(glossed, for: self.settings.targetLanguageID)
             self.applyDraft(id: id, text: text, translated: translated)
         }
     }

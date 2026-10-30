@@ -44,6 +44,19 @@ enum LanguageMapping {
             ?? id
     }
 
+    /// Target name used inside model prompts. Generic names like "Chinese"
+    /// invite the model to pick either variant.
+    static func promptName(for id: String) -> String {
+        switch id {
+        case "zh-Hans", "zh-CN", "zh-SG", "zh":
+            return "Simplified Chinese (简体中文)"
+        case "zh-Hant", "zh-TW", "zh-HK":
+            return "Traditional Chinese (繁體中文)"
+        default:
+            return displayName(forBCP47: id)
+        }
+    }
+
     static func displayName(forLanguage language: Locale.Language) -> String {
         Locale.current.localizedString(forLanguageCode: language.minimalIdentifier)
             ?? Locale(identifier: "zh-Hans").localizedString(forLanguageCode: language.minimalIdentifier)
