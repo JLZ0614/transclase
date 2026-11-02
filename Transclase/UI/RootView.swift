@@ -90,6 +90,14 @@ struct RootView: View {
             }
             #endif
         }
+        .fileExporter(
+            isPresented: $model.isExporting,
+            document: model.exportDocument,
+            contentType: .markdownText,
+            defaultFilename: model.exportFilename
+        ) { _ in
+            model.exportDocument = nil
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environmentObject(model)

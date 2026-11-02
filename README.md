@@ -27,7 +27,8 @@
 - **术语表**：课程级词表，纠正模型把专有名词、缩写原样留下的问题
 - **离线优先**：识别与翻译都用系统端侧模型，飞行模式可用
 - **三级翻译降级**：系统离线翻译 → Apple 智能 → 仅原文
-- **导出**：双语 Markdown 逐字稿，走系统分享
+- **导出**：双语逐字稿（复制 / 分享），或只含原语言的 Markdown 文件（位置自选）
+- **模型管理**：可见已安装的识别与翻译模型，可下载，删除需到系统里操作
 - **演示模式**：没有麦克风、没有语言包也能先看效果
 
 ## 系统要求
@@ -67,7 +68,7 @@ tap 在 [JLZ0614/homebrew-transclase](https://github.com/JLZ0614/homebrew-transc
 
 ### 方式三：手动下载
 
-去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.1.0-macOS.zip`：
+去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.2.0-macOS.zip`：
 
 1. 解压，得到 `Transclase.app`、`install.command`、`安装说明.txt`
 2. 打开「终端」，`cd` 进解压出来的目录，执行 `bash install.command`

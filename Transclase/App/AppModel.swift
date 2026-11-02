@@ -22,6 +22,8 @@ final class AppModel: ObservableObject {
     @Published var pendingClearConfirmation = false
     @Published var speechProgress: Double?
     @Published var isPreparingPack = false
+    @Published var exportDocument: MarkdownDocument?
+    @Published var isExporting = false
     @Published var isBootstrapping = true
     @Published var speechOptions: [LanguageOption] = []
     @Published var translationOptions: [LanguageOption] = []
@@ -306,6 +308,26 @@ final class AppModel: ObservableObject {
     func requestClear() {
         guard !captions.isEmpty else { return }
         pendingClearConfirmation = true
+    }
+
+    var exportFilename: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HHmm"
+        return "transcript-\(formatter.string(from: startedAt ?? Date()))"
+    }
+
+    /// Source-language transcript, saved wherever the user picks.
+    func exportSourceMarkdown() {
+        let finals = captions.filter(\.isFinal)
+        guard !finals.isEmpty else { return }
+        exportDocument = MarkdownDocument(
+            text: SessionExport.sourceMarkdown(
+                captions: finals,
+                languageName: sourceName,
+                startedAt: startedAt ?? Date()
+            )
+        )
+        isExporting = true
     }
 
     func clear() {

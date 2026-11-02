@@ -95,6 +95,20 @@ struct SettingsView: View {
                     Text("实时草稿会在句子没说完时先给一版半透明译文，句子结束后替换成正式译文。只翻整句更准，但会晚 1–2 秒。")
                 }
 
+                Section("模型") {
+                    NavigationLink {
+                        ModelManagerView()
+                            .environmentObject(model)
+                    } label: {
+                        HStack {
+                            Label("已下载的模型", systemImage: "internaldrive")
+                            Spacer()
+                            Text("\(model.speechOptions.filter(\.isInstalled).count) 个识别")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("术语") {
                     NavigationLink {
                         GlossaryEditor()

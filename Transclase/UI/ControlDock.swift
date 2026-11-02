@@ -152,6 +152,12 @@ struct SessionMenu: View {
             }
 
             Button {
+                model.exportSourceMarkdown()
+            } label: {
+                Label("导出 Markdown 文件（仅原文）", systemImage: "square.and.arrow.down")
+            }
+
+            Button {
                 Clipboard.copy(model.translationMarkdown)
             } label: {
                 Label("复制为 Markdown", systemImage: "text.badge.checkmark")

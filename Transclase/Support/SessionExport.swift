@@ -34,6 +34,35 @@ enum SessionExport {
         return lines.joined(separator: "\n")
     }
 
+    /// Source language only — no translations. Used by the "export .md" action.
+    static func sourceMarkdown(
+        captions: [Caption],
+        languageName: String,
+        startedAt: Date
+    ) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+
+        var lines: [String] = []
+        lines.append("# Lecture transcript")
+        lines.append("")
+        lines.append("- Date: \(formatter.string(from: startedAt))")
+        lines.append("- Language: \(languageName)")
+        lines.append("- Segments: \(captions.count)")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+        for caption in captions {
+            lines.append("**[\(timecode(caption.start))]**")
+            lines.append("")
+            lines.append("> \(caption.source)")
+            lines.append("")
+        }
+        return lines.joined(separator: "\n")
+    }
+
     static func plainText(captions: [Caption]) -> String {
         captions
             .map { caption in
