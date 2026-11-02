@@ -29,9 +29,6 @@ struct RootView: View {
                 }
             }
             .navigationTitle("课堂同传")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -46,9 +43,7 @@ struct RootView: View {
                 ControlDock()
             }
         }
-        #if os(macOS)
         .frame(minWidth: 620, minHeight: 520)
-        #endif
         .animation(.snappy(duration: 0.25), value: model.errorMessage)
         .translationTask(model.translationConfiguration) { session in
             model.adoptTranslationSession(session)
@@ -84,11 +79,6 @@ struct RootView: View {
             // Without a background-audio entitlement the capture session dies
             // when iOS suspends us, so shut down cleanly instead of leaving a
             // half-dead pipeline behind.
-            #if os(iOS)
-            if phase == .background, model.isRunning {
-                Task { await model.stop() }
-            }
-            #endif
         }
         .fileExporter(
             isPresented: $model.isExporting,

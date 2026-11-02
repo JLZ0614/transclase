@@ -9,7 +9,6 @@ struct TransclaseApp: App {
             RootView()
                 .environmentObject(model)
         }
-        #if os(macOS)
         .commands {
             CommandMenu("课程") {
                 Button(model.isRunning ? "停止" : "开始") {
@@ -24,6 +23,5 @@ struct TransclaseApp: App {
                 .disabled(model.captions.isEmpty)
             }
         }
-        #endif
     }
 }

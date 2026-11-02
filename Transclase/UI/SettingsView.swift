@@ -143,18 +143,13 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
             .navigationTitle("设置")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") { dismiss() }
                 }
             }
         }
-        #if os(macOS)
         .frame(minWidth: 480, minHeight: 600)
-        #endif
     }
 }
 
@@ -193,9 +188,6 @@ struct GlossaryEditor: View {
             }
         }
         .navigationTitle("术语表")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

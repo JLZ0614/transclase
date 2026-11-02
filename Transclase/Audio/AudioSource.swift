@@ -43,10 +43,6 @@ final class MicrophoneSource: AudioSource {
     func start() async throws -> AsyncStream<AVAudioPCMBuffer> {
         try await Self.requestPermission()
 
-        #if os(iOS)
-        try configureAudioSession()
-        #endif
-
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
@@ -92,14 +88,9 @@ final class MicrophoneSource: AudioSource {
         }
         continuation?.finish()
         continuation = nil
-
-        #if os(iOS)
-        // Leaving the session active keeps the system microphone indicator lit.
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
     }
 
-    // MARK: - Platform setup
+    // MARK: - Permission
 
     private static func requestPermission() async throws {
         let granted: Bool = await withCheckedContinuation { continuation in
@@ -110,15 +101,6 @@ final class MicrophoneSource: AudioSource {
         if !granted { throw AudioError.permissionDenied }
     }
 
-    #if os(iOS)
-    private func configureAudioSession() throws {
-        let session = AVAudioSession.sharedInstance()
-        // `.measurement` disables the aggressive processing that makes far-field
-        // lecture audio sound "clean" to a human but destroys it for an ASR model.
-        try session.setCategory(.record, mode: .measurement, options: [])
-        try session.setActive(true, options: [])
-    }
-    #endif
 
     // MARK: - Buffer helpers
 

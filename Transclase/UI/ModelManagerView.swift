@@ -64,9 +64,6 @@ struct ModelManagerView: View {
             }
         }
         .navigationTitle("模型")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
         .task { await refresh() }
         .refreshable { await refresh() }
     }
