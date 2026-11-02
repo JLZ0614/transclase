@@ -12,12 +12,10 @@ import FoundationModels
 final class FoundationModelTranslationEngine: MTEngine {
     private let sourceName: String
     private let targetName: String
-    private let glossary: [GlossaryTerm]
 
-    init(sourceName: String, targetName: String, glossary: [GlossaryTerm]) {
+    init(sourceName: String, targetName: String) {
         self.sourceName = sourceName
         self.targetName = targetName
-        self.glossary = glossary
     }
 
     static var isAvailable: Bool {
@@ -38,18 +36,6 @@ final class FoundationModelTranslationEngine: MTEngine {
         Output only the translation — no quotes, no notes, no explanations. \
         Keep formulas, code, names and abbreviations in their original form.
         """
-        let usable = glossary.filter {
-            !$0.source.trimmingCharacters(in: .whitespaces).isEmpty
-                && !$0.target.trimmingCharacters(in: .whitespaces).isEmpty
-        }
-        if !usable.isEmpty {
-            let table = usable
-                .prefix(40)
-                .map { "\($0.source) → \($0.target)" }
-                .joined(separator: "; ")
-            instructions += "\nAlways translate these terms this way: \(table)"
-        }
-
         do {
             // A fresh session per sentence keeps each translation independent;
             // a long-lived session would drift and accumulate context.

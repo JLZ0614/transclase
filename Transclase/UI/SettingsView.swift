@@ -109,20 +109,6 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("术语") {
-                    NavigationLink {
-                        GlossaryEditor()
-                            .environmentObject(model)
-                    } label: {
-                        HStack {
-                            Label("课程术语表", systemImage: "character.book.closed")
-                            Spacer()
-                            Text("\(model.settings.glossary.count) 条")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
                 Section("关于") {
                     LabeledContent("版本", value: version)
                     LabeledContent("本机能力") {
@@ -150,52 +136,5 @@ struct SettingsView: View {
             }
         }
         .frame(minWidth: 480, minHeight: 600)
-    }
-}
-
-struct GlossaryEditor: View {
-    @EnvironmentObject private var model: AppModel
-
-    var body: some View {
-        List {
-            Section {
-                ForEach($model.settings.glossary) { $term in
-                    HStack(spacing: 8) {
-                        TextField("原文术语", text: $term.source)
-                            .textFieldStyle(.roundedBorder)
-                        Image(systemName: "arrow.right")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                        TextField("译法", text: $term.target)
-                            .textFieldStyle(.roundedBorder)
-                        // Swipe-to-delete only exists on iOS, so macOS needs an
-                        // explicit control.
-                        Button {
-                            model.settings.glossary.removeAll { $0.id == term.id }
-                        } label: {
-                            Image(systemName: "minus.circle.fill")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel("删除这条术语")
-                    }
-                }
-                .onDelete { offsets in
-                    model.settings.glossary.remove(atOffsets: offsets)
-                }
-            } footer: {
-                Text("术语表用于纠正模型把专有名词、缩写原样留下的情况。同一个词在一节课里保持同一种译法，比偶尔译得更漂亮更重要。")
-            }
-        }
-        .navigationTitle("术语表")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    model.settings.glossary.append(GlossaryTerm(source: "", target: ""))
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
-        }
     }
 }

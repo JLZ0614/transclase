@@ -22,7 +22,6 @@ final class CaptionPipeline {
     var onSpeechDownloadProgress: ((Double) -> Void)?
 
     private var settings = AppSettings()
-    private var glossary = GlossaryProcessor(terms: [])
 
     private var audioSource: AudioSource?
     private var asr: ASREngine?
@@ -46,7 +45,6 @@ final class CaptionPipeline {
         sessionProvider: @escaping () -> TranslationSession?
     ) async throws {
         self.settings = settings
-        self.glossary = GlossaryProcessor(terms: settings.glossary)
         // Deliberately does NOT clear: stop/start is pause/resume, not "new
         // lecture". Wiping here loses the transcript on a mis-tapped stop.
         sessionSeq += 1
@@ -96,8 +94,7 @@ final class CaptionPipeline {
         } else if useFoundationModel {
             translator = FoundationModelTranslationEngine(
                 sourceName: LanguageMapping.displayName(forBCP47: settings.sourceLanguageID),
-                targetName: LanguageMapping.promptName(for: settings.targetLanguageID),
-                glossary: settings.glossary
+                targetName: LanguageMapping.promptName(for: settings.targetLanguageID)
             )
         } else {
             translator = AppleTranslationEngine(
@@ -252,8 +249,7 @@ final class CaptionPipeline {
             defer { self.pendingFinalTranslations = max(0, self.pendingFinalTranslations - 1) }
             do {
                 let raw = try await mt.translate(text)
-                let glossed = self.glossary.apply(to: raw, sourceText: text)
-                let translated = ChineseVariant.normalized(glossed, for: self.settings.targetLanguageID)
+                let translated = ChineseVariant.normalized(raw, for: self.settings.targetLanguageID)
                 self.finishTranslation(id: id, text: text, translated: translated)
             } catch {
                 self.failTranslation(id: id, text: text, message: error.localizedDescription)
@@ -277,8 +273,7 @@ final class CaptionPipeline {
             _ = await previous?.value
             guard let self else { return }
             guard let raw = try? await mt.translate(text) else { return }
-            let glossed = self.glossary.apply(to: raw, sourceText: text)
-            let translated = ChineseVariant.normalized(glossed, for: self.settings.targetLanguageID)
+            let translated = ChineseVariant.normalized(raw, for: self.settings.targetLanguageID)
             self.applyDraft(id: id, text: text, translated: translated)
         }
     }

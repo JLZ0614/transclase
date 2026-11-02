@@ -9,7 +9,6 @@ struct AppSettings: Codable, Equatable {
     var draftTranslation: Bool = false
     var demoMode: Bool = false
     var autoScroll: Bool = true
-    var glossary: [GlossaryTerm] = GlossaryTerm.samples
 
     private static let storageKey = "transclase.settings.v1"
 
