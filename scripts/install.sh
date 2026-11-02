@@ -10,10 +10,6 @@
 set -euo pipefail
 
 REPO="JLZ0614/transclase"
-# 默认取 GitHub 上最新的 Release 标签，失败则回退到内置版本
-VERSION="${TRANSCLASE_VERSION:-$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-  | sed -n 's/.*"tag_name": *"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' | head -1)}"
-[ -n "$VERSION" ] || VERSION="1.0.1"
 DEST="${TRANSCLASE_DEST:-/Applications}"
 APP_NAME="Transclase.app"
 
@@ -31,13 +27,21 @@ if [ "$(uname -m)" != "arm64" ]; then
   say "注意：检测到 Intel Mac。App 可以运行，但实时识别需要 Apple Silicon，只能看演示模式。"
 fi
 
-URL="https://github.com/$REPO/releases/download/v$VERSION/Transclase-$VERSION-macOS.zip"
+# 默认走「最新版本」的稳定文件名，不查询 GitHub API。
+# 未登录访问 API 有每小时 60 次限制，超限返回 403 —— 之前安装失败就是这个原因。
+if [ -n "${TRANSCLASE_VERSION:-}" ]; then
+  URL="https://github.com/$REPO/releases/download/v$TRANSCLASE_VERSION/Transclase-$TRANSCLASE_VERSION-macOS.zip"
+else
+  URL="https://github.com/$REPO/releases/latest/download/Transclase-macOS.zip"
+fi
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # --- 下载与解压 -------------------------------------------------------------
-say "下载 Transclase $VERSION"
-curl -fsSL "$URL" -o "$TMP/app.zip" || die "下载失败，检查网络或版本号（$URL）"
+say "下载 Transclase"
+curl -fL --retry 3 --retry-delay 1 --connect-timeout 15 "$URL" -o "$TMP/app.zip" \
+  || die "下载失败：$URL"
 
 say "解压"
 ditto -x -k "$TMP/app.zip" "$TMP/out" || die "解压失败"
@@ -62,5 +66,6 @@ else
 fi
 xattr -dr com.apple.quarantine "$DEST/$APP_NAME" 2>/dev/null || sudo xattr -dr com.apple.quarantine "$DEST/$APP_NAME" 2>/dev/null || true
 
-say "完成"
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$DEST/$APP_NAME/Contents/Info.plist" 2>/dev/null || echo '?')"
+say "完成（版本 $VERSION）"
 open "$DEST/$APP_NAME"
