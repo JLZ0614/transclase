@@ -16,5 +16,4 @@ dist/
 方案-v1.md
 
 # local screenshots
-*.png
-!Transclase/Assets.xcassets/**
+/*.png
