@@ -14,3 +14,7 @@ dist/
 .DS_Store
 .swiftpm/
 方案-v1.md
+
+# local screenshots
+*.png
+!Transclase/Assets.xcassets/**
