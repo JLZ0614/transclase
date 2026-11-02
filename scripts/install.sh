@@ -67,5 +67,5 @@ fi
 xattr -dr com.apple.quarantine "$DEST/$APP_NAME" 2>/dev/null || sudo xattr -dr com.apple.quarantine "$DEST/$APP_NAME" 2>/dev/null || true
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$DEST/$APP_NAME/Contents/Info.plist" 2>/dev/null || echo '?')"
-say "完成（版本 $VERSION）"
+say "完成（版本 ${VERSION}）"
 open "$DEST/$APP_NAME"
