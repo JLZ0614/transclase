@@ -141,16 +141,16 @@ struct EmptyStateView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 20) {
             Spacer()
 
             Image(systemName: "waveform")
-                .font(.system(size: 40, weight: .light))
+                .font(.system(size: 38, weight: .light))
                 .foregroundStyle(.tint)
-                .frame(width: 96, height: 96)
+                .frame(width: 88, height: 88)
                 .glassEffect(.regular, in: .circle)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 7) {
                 Text("把设备放在桌上，点开始")
                     .font(.title3.weight(.semibold))
                 Text("声音只在本机处理。识别用系统语音模型，翻译用系统离线语言包。")
@@ -172,23 +172,37 @@ struct EmptyStateView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+            } else {
+                readinessCard
             }
 
             HStack(spacing: 12) {
-                Button {
-                    Task { await model.start() }
-                } label: {
-                    Label("开始听课", systemImage: "mic.fill")
-                        .padding(.horizontal, 6)
+                if model.isDemoActive || model.isReadyOffline {
+                    Button {
+                        Task { await model.start() }
+                    } label: {
+                        Label("开始听课", systemImage: "mic.fill")
+                            .padding(.horizontal, 6)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                } else {
+                    Button {
+                        Task { await model.prepareOfflinePack() }
+                    } label: {
+                        Label(model.isPreparingPack ? "准备中…" : "准备离线包",
+                              systemImage: "arrow.down.circle")
+                            .padding(.horizontal, 6)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                    .disabled(model.isPreparingPack)
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
 
                 Button {
                     Task { await model.playDemo() }
                 } label: {
-                    Text("看演示")
-                        .padding(.horizontal, 6)
+                    Text("看演示").padding(.horizontal, 6)
                 }
                 .buttonStyle(.glass)
                 .controlSize(.large)
@@ -197,5 +211,66 @@ struct EmptyStateView: View {
             Spacer()
         }
         .padding(28)
+    }
+
+    /// Two-line checklist so nobody discovers mid-lecture that a download was
+    /// still pending.
+    private var readinessCard: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            ReadinessRow(
+                title: "识别模型",
+                detail: model.sourceName,
+                ready: model.isSpeechModelInstalled
+            )
+            ReadinessRow(
+                title: "翻译语言包",
+                detail: model.pairLabel,
+                ready: model.isTranslationPackInstalled
+            )
+
+            if let progress = model.speechProgress {
+                VStack(alignment: .leading, spacing: 3) {
+                    ProgressView(value: progress)
+                        .progressViewStyle(.linear)
+                    Text("正在下载识别模型 \(Int(progress * 100))%")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 2)
+            } else if !model.isReadyOffline {
+                Text("首次使用需要联网下载一次，约 400 MB。装好后上课全程离线。")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 380)
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+    }
+}
+
+private struct ReadinessRow: View {
+    let title: String
+    let detail: String
+    let ready: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: ready ? "checkmark.circle.fill" : "circle.dashed")
+                .font(.system(size: 13))
+                .foregroundStyle(ready ? Color.green : Color.secondary)
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+            Text(detail)
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            Text(ready ? "已就绪" : "待下载")
+                .font(.system(size: 11))
+                .foregroundStyle(ready ? .secondary : .secondary)
+        }
     }
 }

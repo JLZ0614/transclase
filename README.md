@@ -67,7 +67,7 @@ tap 在 [JLZ0614/homebrew-transclase](https://github.com/JLZ0614/homebrew-transc
 
 ### 方式三：手动下载
 
-去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.0.1-macOS.zip`：
+去 [**Releases**](https://github.com/JLZ0614/transclase/releases/latest) 下载 `Transclase-1.1.0-macOS.zip`：
 
 1. 解压，得到 `Transclase.app`、`install.command`、`安装说明.txt`
 2. 打开「终端」，`cd` 进解压出来的目录，执行 `bash install.command`

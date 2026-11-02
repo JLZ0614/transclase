@@ -16,7 +16,19 @@ final class AppleSpeechEngine: ASREngine {
 
     private(set) var requiredFormat: AVAudioFormat?
 
+    /// 0…1 while the system is fetching the recognition model.
+    var onDownloadProgress: ((Double) -> Void)?
+
     var events: AsyncStream<ASREvent> { eventStream }
+
+    static func makeTranscriber(locale: Locale) -> SpeechTranscriber {
+        SpeechTranscriber(
+            locale: locale,
+            transcriptionOptions: [],
+            reportingOptions: [.volatileResults, .fastResults],
+            attributeOptions: [.audioTimeRange, .transcriptionConfidence]
+        )
+    }
 
     init() {
         (eventStream, eventContinuation) = AsyncStream<ASREvent>.makeStream(
@@ -35,12 +47,7 @@ final class AppleSpeechEngine: ASREngine {
             throw ASRError.unsupportedLocale(locale.identifier)
         }
 
-        let transcriber = SpeechTranscriber(
-            locale: supported,
-            transcriptionOptions: [],
-            reportingOptions: [.volatileResults, .fastResults],
-            attributeOptions: [.audioTimeRange, .transcriptionConfidence]
-        )
+        let transcriber = Self.makeTranscriber(locale: supported)
         self.transcriber = transcriber
 
         try await ensureModel(for: transcriber, locale: supported)
@@ -55,15 +62,18 @@ final class AppleSpeechEngine: ASREngine {
     }
 
     private func ensureModel(for transcriber: SpeechTranscriber, locale: Locale) async throws {
-        let installed = await SpeechTranscriber.installedLocales
+        let alreadyInstalled = await SpeechTranscriber.installedLocales
             .map { $0.identifier(.bcp47) }
-        if installed.contains(locale.identifier(.bcp47)) { return }
+            .contains(locale.identifier(.bcp47))
+        guard !alreadyInstalled else { return }
 
         eventContinuation.yield(.status("正在下载 \(languageName(locale)) 识别模型…"))
         do {
-            _ = try? await AssetInventory.reserve(locale: locale)
-            if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
-                try await request.downloadAndInstall()
+            try await SpeechModelInstaller.ensureInstalled(
+                module: transcriber,
+                locale: locale
+            ) { [weak self] fraction in
+                self?.onDownloadProgress?(fraction)
             }
         } catch {
             throw ASRError.modelDownloadFailed(error.localizedDescription)
@@ -141,5 +151,46 @@ final class AppleSpeechEngine: ASREngine {
     /// same span map to the same row, so text is replaced rather than appended.
     static func captionID(for time: TimeInterval) -> String {
         "seg-\(Int((time * 10).rounded()))"
+    }
+}
+
+
+/// Downloads the on-device recognition model for a locale, reporting progress.
+/// Shared by the engine (implicit download on start) and by the app's explicit
+/// "prepare offline pack" flow.
+enum SpeechModelInstaller {
+    static func ensureInstalled(
+        module: SpeechTranscriber,
+        locale: Locale,
+        onProgress: (@Sendable (Double) -> Void)? = nil
+    ) async throws {
+        let installed = await SpeechTranscriber.installedLocales
+            .map { $0.identifier(.bcp47) }
+        if installed.contains(locale.identifier(.bcp47)) {
+            onProgress?(1)
+            return
+        }
+
+        _ = try? await AssetInventory.reserve(locale: locale)
+        guard let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) else {
+            onProgress?(1)
+            return
+        }
+
+        // `Progress` is only observable through polling here; 200 ms is smooth
+        // enough for a progress bar and cheap enough to ignore.
+        let poller = onProgress.map { report in
+            Task {
+                while !Task.isCancelled {
+                    report(request.progress.fractionCompleted)
+                    if request.progress.isFinished { break }
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                }
+            }
+        }
+        defer { poller?.cancel() }
+
+        try await request.downloadAndInstall()
+        onProgress?(1)
     }
 }

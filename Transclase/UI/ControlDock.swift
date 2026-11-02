@@ -40,6 +40,9 @@ struct ControlDock: View {
     }
 
     private var statusLine: String {
+        if let progress = model.speechProgress {
+            return "下载识别模型 \(Int(progress * 100))%"
+        }
         var text = model.statusText
         if !model.captions.isEmpty {
             text += " · \(model.captions.count) 段"

@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import Speech
 import Translation
 
 @MainActor
@@ -19,6 +20,8 @@ final class AppModel: ObservableObject {
     @Published var translationEngineLabel = "—"
     @Published var languagePackStatus = "未知"
     @Published var pendingClearConfirmation = false
+    @Published var speechProgress: Double?
+    @Published var isPreparingPack = false
     @Published var isBootstrapping = true
     @Published var speechOptions: [LanguageOption] = []
     @Published var translationOptions: [LanguageOption] = []
@@ -47,6 +50,9 @@ final class AppModel: ObservableObject {
         pipeline.onTranslationEngine = { [weak self] label in
             self?.translationEngineLabel = label
         }
+        pipeline.onSpeechDownloadProgress = { [weak self] fraction in
+            self?.speechProgress = fraction >= 1 ? nil : fraction
+        }
     }
 
     // MARK: - Capabilities
@@ -64,6 +70,19 @@ final class AppModel: ObservableObject {
     }
 
     var isFoundationModelAvailable: Bool { FoundationModelTranslationEngine.isAvailable }
+
+    /// Recognition model for the chosen source locale is on disk.
+    var isSpeechModelInstalled: Bool {
+        speechOptions.first { $0.id == settings.sourceLanguageID }?.isInstalled ?? false
+    }
+
+    var isTranslationPackInstalled: Bool { languagePackStatus == "已安装" }
+
+    /// Everything needed to work with no network and no further downloads.
+    var isReadyOffline: Bool {
+        guard !isDemoActive else { return true }
+        return isSpeechModelInstalled && isTranslationPackInstalled
+    }
 
     var speechLanguages: Set<String> { Set(speechOptions.map(\.id)) }
     var translationLanguages: Set<String> { Set(translationOptions.map(\.id)) }
@@ -195,6 +214,51 @@ final class AppModel: ObservableObject {
     static var wantsSelfTest: Bool {
         ProcessInfo.processInfo.arguments.contains("--selftest")
             || ProcessInfo.processInfo.environment["LECSUB_SELFTEST"] == "1"
+    }
+
+    // MARK: - Offline preparation
+
+    /// Explicitly fetch everything a lecture needs: the recognition model and
+    /// the translation language pack. Safe to call repeatedly.
+    func prepareOfflinePack() async {
+        guard !isPreparingPack else { return }
+        isPreparingPack = true
+        errorMessage = nil
+        defer {
+            isPreparingPack = false
+            speechProgress = nil
+        }
+
+        do {
+            let locale = LanguageMapping.speechLocale(settings.sourceLanguageID)
+            guard let supported = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else {
+                throw ASRError.unsupportedLocale(locale.identifier)
+            }
+            try await SpeechModelInstaller.ensureInstalled(
+                module: AppleSpeechEngine.makeTranscriber(locale: supported),
+                locale: supported
+            ) { [weak self] fraction in
+                Task { @MainActor in
+                    self?.speechProgress = fraction >= 1 ? nil : fraction
+                }
+            }
+            await refreshCapabilities()
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+
+        // The translation pack can only be requested through the system prompt
+        // owned by `.translationTask`.
+        syncTranslationConfiguration(force: true)
+        try? await Task.sleep(for: .seconds(1.2))
+        await refreshLanguagePackStatus()
+    }
+
+    func refreshCapabilities() async {
+        let catalog = await LanguageCatalog.load()
+        speechOptions = catalog.speech
+        translationOptions = catalog.translation
     }
 
     // MARK: - Run control

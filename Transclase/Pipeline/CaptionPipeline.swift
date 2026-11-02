@@ -19,6 +19,7 @@ final class CaptionPipeline {
     var onError: ((String) -> Void)?
     var onLevel: ((Float) -> Void)?
     var onTranslationEngine: ((String) -> Void)?
+    var onSpeechDownloadProgress: ((Double) -> Void)?
 
     private var settings = AppSettings()
     private var glossary = GlossaryProcessor(terms: [])
@@ -53,6 +54,11 @@ final class CaptionPipeline {
         onStatus?("正在准备识别模型…")
 
         let recognizer: ASREngine = settings.demoMode ? DemoASREngine() : AppleSpeechEngine()
+        if let apple = recognizer as? AppleSpeechEngine {
+            apple.onDownloadProgress = { [weak self] fraction in
+                Task { @MainActor in self?.onSpeechDownloadProgress?(fraction) }
+            }
+        }
         asr = recognizer
         try await recognizer.prepare(locale: LanguageMapping.speechLocale(settings.sourceLanguageID))
 

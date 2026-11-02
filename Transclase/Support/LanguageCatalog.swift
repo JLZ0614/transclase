@@ -38,9 +38,14 @@ enum LanguageMapping {
         }
     }
 
+    /// The UI is Simplified Chinese, so language names should be too — otherwise
+    /// a Spanish-language Mac shows "Spanish (Spain) → Chinese" inside a Chinese
+    /// interface.
+    private static let displayLocale = Locale(identifier: "zh-Hans")
+
     static func displayName(forBCP47 id: String) -> String {
-        Locale.current.localizedString(forIdentifier: id)
-            ?? Locale(identifier: "zh-Hans").localizedString(forIdentifier: id)
+        displayLocale.localizedString(forIdentifier: id)
+            ?? Locale.current.localizedString(forIdentifier: id)
             ?? id
     }
 
@@ -58,8 +63,8 @@ enum LanguageMapping {
     }
 
     static func displayName(forLanguage language: Locale.Language) -> String {
-        Locale.current.localizedString(forLanguageCode: language.minimalIdentifier)
-            ?? Locale(identifier: "zh-Hans").localizedString(forLanguageCode: language.minimalIdentifier)
+        displayLocale.localizedString(forLanguageCode: language.minimalIdentifier)
+            ?? Locale.current.localizedString(forLanguageCode: language.minimalIdentifier)
             ?? language.minimalIdentifier
     }
 }
