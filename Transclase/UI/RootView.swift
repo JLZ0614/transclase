@@ -28,7 +28,7 @@ struct RootView: View {
                     }
                 }
             }
-            .navigationTitle("课堂同传")
+            .navigationTitle("")
             .toolbarBackground(.hidden, for: .windowToolbar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
