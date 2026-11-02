@@ -22,19 +22,25 @@ struct AppBackdrop: View {
 
     var body: some View {
         ZStack {
-            Color.appBackground
-            RadialGradient(
-                colors: [Color.accentColor.opacity(colorScheme == .dark ? 0.22 : 0.13), .clear],
-                center: .topLeading,
-                startRadius: 20,
-                endRadius: 720
-            )
-            RadialGradient(
-                colors: [Color.blue.opacity(colorScheme == .dark ? 0.10 : 0.06), .clear],
-                center: .bottomTrailing,
-                startRadius: 20,
-                endRadius: 560
-            )
+            if colorScheme == .dark {
+                // Dark appearance: pure black, no colour wash — the glass
+                // panels read better against a neutral backdrop anyway.
+                Color.black
+            } else {
+                Color.appBackground
+                RadialGradient(
+                    colors: [Color.accentColor.opacity(0.13), .clear],
+                    center: .topLeading,
+                    startRadius: 20,
+                    endRadius: 720
+                )
+                RadialGradient(
+                    colors: [Color.blue.opacity(0.06), .clear],
+                    center: .bottomTrailing,
+                    startRadius: 20,
+                    endRadius: 560
+                )
+            }
         }
         .ignoresSafeArea()
     }
