@@ -17,3 +17,6 @@ dist/
 
 # local screenshots
 /*.png
+
+# local cask staging
+.tap/
