@@ -22,6 +22,8 @@ final class AppModel: ObservableObject {
     @Published var pendingClearConfirmation = false
     @Published var speechProgress: Double?
     @Published var isPreparingPack = false
+    @Published var engineTestResult: String?
+    @Published var isTestingEngine = false
     @Published var exportDocument: MarkdownDocument?
     @Published var isExporting = false
     @Published var isBootstrapping = true
@@ -216,6 +218,49 @@ final class AppModel: ObservableObject {
     static var wantsSelfTest: Bool {
         ProcessInfo.processInfo.arguments.contains("--selftest")
             || ProcessInfo.processInfo.environment["LECSUB_SELFTEST"] == "1"
+    }
+
+    // MARK: - Translation engine
+
+    func saveCloudAPIKey(_ key: String) {
+        Keychain.save(key, for: "cloudAPIKey")
+    }
+
+    var hasCloudAPIKey: Bool { Keychain.load("cloudAPIKey") != nil }
+
+    /// Sends one throw-away sentence through the selected engine so the user can
+    /// tell "config wrong" from "model slow".
+    func testTranslationEngine() async {
+        guard !isTestingEngine else { return }
+        isTestingEngine = true
+        engineTestResult = nil
+        defer { isTestingEngine = false }
+
+        let s = settings
+        let isCloud = s.translationEngine == .cloud
+        let urlString = isCloud ? s.cloudBaseURL : s.localBaseURL
+        let model = isCloud ? s.cloudModel : s.localModel
+        guard let url = URL(string: urlString) else {
+            engineTestResult = "地址无效"
+            return
+        }
+
+        let engine = OpenAICompatibleEngine(
+            baseURL: url,
+            model: model,
+            apiKey: isCloud ? Keychain.load("cloudAPIKey") : nil,
+            sourceName: LanguageMapping.displayName(forBCP47: s.sourceLanguageID),
+            targetName: LanguageMapping.promptName(for: s.targetLanguageID)
+        )
+        let started = Date()
+        do {
+            try await engine.prepare()
+            let output = try await engine.translate("This is a test of the translation engine.")
+            let ms = Int(Date().timeIntervalSince(started) * 1000)
+            engineTestResult = "✅ \(ms) ms · \(output)"
+        } catch {
+            engineTestResult = "❌ \(error.localizedDescription)"
+        }
     }
 
     // MARK: - Offline preparation

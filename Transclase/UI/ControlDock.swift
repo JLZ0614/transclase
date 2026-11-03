@@ -65,6 +65,7 @@ private struct DockIcon: View {
 
 struct StartStopButton: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button {
@@ -75,18 +76,27 @@ struct StartStopButton: View {
                     ProgressView()
                         .controlSize(.small)
                         .tint(.white)
+                } else if model.isRunning {
+                    // 录音时不要红色底盘，只留一个方块，背景透明
+                    // `Color.primary` inside the glass container gets vibrant
+                    // blending and turns grey, so use an explicit colour.
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(colorScheme == .dark ? Color.white : Color.black)
+                        .frame(width: 14, height: 14)
                 } else {
-                    Image(systemName: model.isRunning ? "stop.fill" : "mic.fill")
+                    Image(systemName: "mic.fill")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(.white)
-                        .contentTransition(.symbolEffect(.replace))
                 }
             }
             .frame(width: 40, height: 40)
+            .background {
+                if !model.isRunning {
+                    Circle().fill(Color.accentColor)
+                }
+            }
         }
-        .buttonStyle(.glassProminent)
-        .buttonBorderShape(.circle)
-        .tint(model.isRunning ? Color.red : Color.accentColor)
+        .buttonStyle(.plain)
         .disabled(model.isPreparing)
         .accessibilityLabel(model.isRunning ? "停止" : "开始")
     }

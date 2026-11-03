@@ -10,7 +10,6 @@ struct Harness {
     static func run() async {
         var settings = AppSettings()
         settings.demoMode = true
-        settings.draftTranslation = false
 
         let pipeline = CaptionPipeline()
         var updates = 0

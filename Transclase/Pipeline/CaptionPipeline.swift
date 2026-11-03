@@ -32,7 +32,14 @@ final class CaptionPipeline {
     private var translationTail: Task<Void, Never>?
 
     private var pendingFinalTranslations = 0
-    private var lastDraftAt = Date.distantPast
+
+    // Sentence assembly: fragments are merged until a boundary, a pause, or a
+    // length cap closes the sentence, then translated as a whole.
+    private var sentenceID: String?
+    private var sentenceText = ""
+    private var sentenceStart: TimeInterval = 0
+    private var sentenceEnd: TimeInterval = 0
+    private var flushTask: Task<Void, Never>?
     private var translationEnabled = true
     /// Bumped per run so ids from a resumed session can't collide with the
     /// rows already on screen (ids are timecode-based and restart at zero).
@@ -60,50 +67,75 @@ final class CaptionPipeline {
         asr = recognizer
         try await recognizer.prepare(locale: LanguageMapping.speechLocale(settings.sourceLanguageID))
 
-        // Pick the best translator this device can actually run right now.
-        // A missing language pack must never cost the user the transcript.
+        // Pick a translator. The user's choice wins; if it cannot start we fall
+        // back to Apple's on-device engine rather than losing translation.
         translationEnabled = true
-        var useFoundationModel = false
         var engineLabel = "系统离线翻译"
+        var translator: MTEngine
 
         if settings.demoMode {
             engineLabel = "演示翻译"
+            translator = DemoMTEngine()
         } else {
-            let status = await LanguageAvailability().status(
-                from: LanguageMapping.translationLanguage(settings.sourceLanguageID),
-                to: LanguageMapping.translationLanguage(settings.targetLanguageID)
-            )
-            if status != .installed {
-                if FoundationModelTranslationEngine.isAvailable {
-                    useFoundationModel = true
-                    engineLabel = "Apple 智能（本地兜底）"
-                    onError?("这个语言对的离线语言包还没下载，暂时改用 Apple 智能本地模型翻译。下载语言包后质量会更好。")
+            let sourceName = LanguageMapping.displayName(forBCP47: settings.sourceLanguageID)
+            let targetName = LanguageMapping.promptName(for: settings.targetLanguageID)
+
+            switch settings.translationEngine {
+            case .apple:
+                (translator, engineLabel, translationEnabled) = await Self.appleTranslator(
+                    settings: settings,
+                    sourceName: sourceName,
+                    targetName: targetName,
+                    sessionProvider: sessionProvider,
+                    onError: onError
+                )
+
+            case .localQwen, .cloud:
+                let isCloud = settings.translationEngine == .cloud
+                let urlString = isCloud ? settings.cloudBaseURL : settings.localBaseURL
+                let model = isCloud ? settings.cloudModel : settings.localModel
+                let key = isCloud ? Keychain.load("cloudAPIKey") : nil
+                let label = isCloud ? "云端 · \(model)" : "本地 · \(model)"
+
+                if let url = URL(string: urlString) {
+                    let candidate = OpenAICompatibleEngine(
+                        baseURL: url,
+                        model: model,
+                        apiKey: key,
+                        sourceName: sourceName,
+                        targetName: targetName
+                    )
+                    do {
+                        try await candidate.prepare()
+                        translator = candidate
+                        engineLabel = label
+                    } catch {
+                        onError?("\(label) 不可用（\(error.localizedDescription)），已临时改用系统翻译。")
+                        (translator, engineLabel, translationEnabled) = await Self.appleTranslator(
+                            settings: settings,
+                            sourceName: sourceName,
+                            targetName: targetName,
+                            sessionProvider: sessionProvider,
+                            onError: nil
+                        )
+                    }
                 } else {
-                    translationEnabled = false
-                    engineLabel = "仅原文"
-                    onError?("离线语言包没下载，本机也没有可用的 Apple 智能模型，所以先只显示原文。到设置里点“下载语言包”即可开启翻译。")
+                    onError?("翻译引擎地址无效，已改用系统翻译。")
+                    (translator, engineLabel, translationEnabled) = await Self.appleTranslator(
+                        settings: settings,
+                        sourceName: sourceName,
+                        targetName: targetName,
+                        sessionProvider: sessionProvider,
+                        onError: nil
+                    )
                 }
             }
         }
 
         onTranslationEngine?(engineLabel)
-
-        let translator: MTEngine
-        if settings.demoMode {
-            translator = DemoMTEngine()
-        } else if useFoundationModel {
-            translator = FoundationModelTranslationEngine(
-                sourceName: LanguageMapping.displayName(forBCP47: settings.sourceLanguageID),
-                targetName: LanguageMapping.promptName(for: settings.targetLanguageID)
-            )
-        } else {
-            translator = AppleTranslationEngine(
-                source: LanguageMapping.translationLanguage(settings.sourceLanguageID),
-                target: LanguageMapping.translationLanguage(settings.targetLanguageID),
-                sessionProvider: sessionProvider
-            )
+        if !(translator is AppleTranslationEngine) {
+            try await translator.prepare()
         }
-        try await translator.prepare()
         mt = translator
 
         if !settings.demoMode {
@@ -121,6 +153,45 @@ final class CaptionPipeline {
         onStatus?("启动中…")
         try await recognizer.start()
         onStatus?(settings.demoMode ? "演示模式运行中" : "正在听课…")
+    }
+
+    /// Apple's on-device path, including the language-pack check and the Apple
+    /// Intelligence fallback. Returns the engine, its label, and whether
+    /// translation should be attempted at all.
+    private static func appleTranslator(
+        settings: AppSettings,
+        sourceName: String,
+        targetName: String,
+        sessionProvider: @escaping () -> TranslationSession?,
+        onError: ((String) -> Void)?
+    ) async -> (MTEngine, String, Bool) {
+        let source = LanguageMapping.translationLanguage(settings.sourceLanguageID)
+        let target = LanguageMapping.translationLanguage(settings.targetLanguageID)
+        let status = await LanguageAvailability().status(from: source, to: target)
+
+        if status == .installed {
+            return (
+                AppleTranslationEngine(source: source, target: target, sessionProvider: sessionProvider),
+                "系统离线翻译",
+                true
+            )
+        }
+
+        if FoundationModelTranslationEngine.isAvailable {
+            onError?("这个语言对的离线语言包还没下载，暂时改用 Apple 智能本地模型翻译。下载语言包后质量会更好。")
+            return (
+                FoundationModelTranslationEngine(sourceName: sourceName, targetName: targetName),
+                "Apple 智能（本地兜底）",
+                true
+            )
+        }
+
+        onError?("离线语言包没下载，本机也没有可用的 Apple 智能模型，先只显示原文。到设置里点“下载语言包”即可开启翻译。")
+        return (
+            AppleTranslationEngine(source: source, target: target, sessionProvider: sessionProvider),
+            "仅原文",
+            false
+        )
     }
 
     private func startAudio(into recognizer: ASREngine) async throws {
@@ -166,6 +237,7 @@ final class CaptionPipeline {
         if let asr {
             await asr.stop()
         }
+        finalizeSentence()
         eventTask?.cancel()
         eventTask = nil
 
@@ -185,24 +257,60 @@ final class CaptionPipeline {
         switch event {
         case .partial(let rawID, let text, let start, let end):
             let id = "s\(sessionSeq)-\(rawID)"
-            upsert(
-                Caption(id: id, source: text, isFinal: false, start: start, end: end)
-            )
-            maybeDraft(id: id, text: text, start: start, end: end)
+            if sentenceID == nil {
+                // Nothing buffered yet: this row will become the sentence row.
+                upsert(Caption(id: id, source: text, isFinal: false, start: start, end: end))
+            } else if let sentenceID {
+                // Prepend what we already have so the line reads continuously.
+                upsert(
+                    Caption(
+                        id: sentenceID,
+                        source: sentenceText + " " + text,
+                        isFinal: false,
+                        start: sentenceStart,
+                        end: end
+                    )
+                )
+            }
 
         case .final(let rawID, let text, let start, let end):
             let id = "s\(sessionSeq)-\(rawID)"
-            upsert(
-                Caption(
-                    id: id,
-                    source: text,
-                    isFinal: true,
-                    state: translationEnabled ? .pending : .idle,
-                    start: start,
-                    end: end
+            let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !clean.isEmpty else { return }
+
+            // A long pause means the previous sentence is done even without
+            // punctuation.
+            if sentenceID != nil, start - sentenceEnd > 0.6 {
+                finalizeSentence()
+            }
+
+            if sentenceID == nil {
+                sentenceID = id            // reuse the live row, no flicker
+                sentenceText = clean
+                sentenceStart = start
+            } else {
+                captions.removeAll { $0.id == id }   // drop its transient row
+                sentenceText += " " + clean
+            }
+            sentenceEnd = end
+
+            if let sentenceID {
+                upsert(
+                    Caption(
+                        id: sentenceID,
+                        source: sentenceText,
+                        isFinal: false,
+                        start: sentenceStart,
+                        end: end
+                    )
                 )
-            )
-            translateFinal(id: id, text: text, start: start, end: end)
+            }
+
+            if SentenceRules.endsSentence(sentenceText) || SentenceRules.tooLong(sentenceText) {
+                finalizeSentence()
+            } else {
+                scheduleFlush()
+            }
 
         case .status(let message):
             onStatus?(message)
@@ -212,7 +320,45 @@ final class CaptionPipeline {
         }
     }
 
+    /// Closes the current sentence: marks the row final and translates the whole
+    /// thing at once.
+    private func finalizeSentence() {
+        flushTask?.cancel()
+        flushTask = nil
+        guard let id = sentenceID else { return }
+        let text = sentenceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        sentenceID = nil
+        sentenceText = ""
+        guard !text.isEmpty else { return }
+
+        upsert(
+            Caption(
+                id: id,
+                source: text,
+                isFinal: true,
+                state: translationEnabled ? .pending : .idle,
+                start: sentenceStart,
+                end: sentenceEnd
+            )
+        )
+        translateFinal(id: id, text: text, start: sentenceStart, end: sentenceEnd)
+    }
+
+    /// Flushes a sentence that ended at a pause without terminal punctuation.
+    private func scheduleFlush() {
+        flushTask?.cancel()
+        flushTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_300_000_000)
+            guard !Task.isCancelled else { return }
+            self?.finalizeSentence()
+        }
+    }
+
     func clear() {
+        flushTask?.cancel()
+        flushTask = nil
+        sentenceID = nil
+        sentenceText = ""
         captions.removeAll()
         publish()
     }
@@ -257,27 +403,6 @@ final class CaptionPipeline {
         }
     }
 
-    /// Optional low-latency channel: a rough translation of the words spoken so
-    /// far, clearly marked as a draft and replaced once the sentence settles.
-    private func maybeDraft(id: String, text: String, start: TimeInterval, end: TimeInterval) {
-        guard settings.draftTranslation else { return }
-        guard pendingFinalTranslations == 0 else { return }
-        guard text.split(whereSeparator: \.isWhitespace).count >= 6 else { return }
-        let now = Date()
-        guard now.timeIntervalSince(lastDraftAt) > 0.9 else { return }
-        guard let mt else { return }
-        lastDraftAt = now
-
-        let previous = translationTail
-        translationTail = Task { [weak self] in
-            _ = await previous?.value
-            guard let self else { return }
-            guard let raw = try? await mt.translate(text) else { return }
-            let translated = ChineseVariant.normalized(raw, for: self.settings.targetLanguageID)
-            self.applyDraft(id: id, text: text, translated: translated)
-        }
-    }
-
     private func finishTranslation(id: String, text: String, translated: String) {
         guard let index = captions.firstIndex(where: { $0.id == id }) else { return }
         guard captions[index].source == text else { return }
@@ -294,11 +419,4 @@ final class CaptionPipeline {
         onError?(message)
     }
 
-    private func applyDraft(id: String, text: String, translated: String) {
-        guard let index = captions.firstIndex(where: { $0.id == id }) else { return }
-        guard !captions[index].isFinal, captions[index].source == text else { return }
-        captions[index].target = translated
-        captions[index].state = .draft
-        publish()
-    }
 }

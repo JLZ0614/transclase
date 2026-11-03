@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @State private var cloudKey = ""
 
     private var version: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -49,6 +50,69 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("翻译引擎", selection: $model.settings.translationEngine) {
+                        ForEach(TranslationEngineKind.allCases) { kind in
+                            Text(kind.title).tag(kind)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                    .disabled(model.isRunning)
+
+                    Text(model.settings.translationEngine.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    switch model.settings.translationEngine {
+                    case .apple:
+                        EmptyView()
+
+                    case .localQwen:
+                        TextField("地址", text: $model.settings.localBaseURL)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(model.isRunning)
+                        TextField("模型名", text: $model.settings.localModel)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(model.isRunning)
+                        Text("先在本机跑起来：\n`ollama pull qwen3:4b` 然后 `ollama serve`\n地址默认指向 Ollama。")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+
+                    case .cloud:
+                        TextField("地址", text: $model.settings.cloudBaseURL)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(model.isRunning)
+                        TextField("模型名", text: $model.settings.cloudModel)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(model.isRunning)
+                        SecureField("API Key（存在钥匙串）", text: $cloudKey)
+                            .textFieldStyle(.roundedBorder)
+                            .disabled(model.isRunning)
+                        Text("文字会发送到该服务商。音频仍然只在本机处理。")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    if model.settings.translationEngine != .apple {
+                        Button {
+                            Task { await model.testTranslationEngine() }
+                        } label: {
+                            Label(model.isTestingEngine ? "测试中…" : "测试连接", systemImage: "bolt.horizontal")
+                        }
+                        .disabled(model.isRunning || model.isTestingEngine)
+
+                        if let result = model.engineTestResult {
+                            Text(result)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+                } header: {
+                    Text("翻译引擎")
+                }
+
+                Section {
                     Picker("识别语言", selection: $model.settings.sourceLanguageID) {
                         ForEach(model.speechOptions) { option in
                             Text(option.displayName).tag(option.id)
@@ -85,14 +149,12 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("实时草稿翻译", isOn: $model.settings.draftTranslation)
-                        .disabled(model.isRunning)
                     Toggle("演示模式", isOn: $model.settings.demoMode)
                         .disabled(model.isRunning)
                 } header: {
                     Text("行为")
                 } footer: {
-                    Text("实时草稿会在句子没说完时先给一版半透明译文，句子结束后替换成正式译文。只翻整句更准，但会晚 1–2 秒。")
+                    Text("译文按完整句子输出：识别到的碎片会先攒成一句，遇到句号或停顿再翻译，准确率明显高于逐片翻译。代价是最后一句会晚 1–2 秒出现。")
                 }
 
                 Section("模型") {
@@ -128,6 +190,10 @@ struct SettingsView: View {
                 }
             }
             .formStyle(.grouped)
+            .onAppear { cloudKey = Keychain.load("cloudAPIKey") ?? "" }
+            .onChange(of: cloudKey) { _, newValue in
+                model.saveCloudAPIKey(newValue)
+            }
             .navigationTitle("设置")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
