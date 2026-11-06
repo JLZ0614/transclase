@@ -16,8 +16,8 @@ struct SidebarView: View {
                 Spacer()
             }
             .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, 12)
+            .padding(.top, model.isFullScreen ? 8 : 14)
+            .padding(.bottom, model.isFullScreen ? 8 : 12)
 
             Button {
                 Task { await model.newConversation() }

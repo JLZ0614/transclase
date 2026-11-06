@@ -4,7 +4,7 @@ import Translation
 struct RootView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showSettings = false
-    @State private var showAssistant = true
+    @State private var showAssistant = false
     @State private var showSidebar = true
 
     var body: some View {
@@ -55,6 +55,12 @@ struct RootView: View {
             } else if AppModel.wantsDemo, model.captions.isEmpty {
                 await model.start()
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in
+            model.isFullScreen = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
+            model.isFullScreen = false
         }
         .onChange(of: model.settings.sourceLanguageID) { _, _ in
             model.syncTranslationConfiguration()
@@ -319,9 +325,17 @@ private struct WindowSizer: NSViewRepresentable {
                     ? .black
                     : .underPageBackgroundColor
             }
-            window.minSize = NSSize(width: 1000, height: 680)
-            if window.frame.width < 1100 || window.frame.height < 700 {
-                window.setContentSize(NSSize(width: 1200, height: 860))
+            window.minSize = NSSize(width: 720, height: 480)
+            if !context.coordinator.didSize {
+                context.coordinator.didSize = true
+                // About a quarter of the screen: half the width, half the height.
+                let visible = (window.screen ?? NSScreen.main)?.visibleFrame
+                    ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+                let target = NSSize(
+                    width: max(720, visible.width * 0.5),
+                    height: max(480, visible.height * 0.52)
+                )
+                window.setContentSize(target)
                 window.center()
             }
         }
@@ -329,4 +343,11 @@ private struct WindowSizer: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator {
+        var didSize = false
+        var observers: [NSObjectProtocol] = []
+    }
 }

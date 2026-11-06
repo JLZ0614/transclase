@@ -95,7 +95,7 @@ struct AssistantPanel: View {
             .disabled(model.assistantBusy)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.vertical, model.isFullScreen ? 6 : 9)
     }
 
     private func summaryCard(_ block: SummaryBlock) -> some View {

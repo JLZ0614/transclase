@@ -35,6 +35,7 @@ final class AppModel: ObservableObject {
     /// Changes whenever the interface language changes, so the view tree can be
     /// rebuilt without relaunching.
     @Published var localizationToken = UUID()
+    @Published var isFullScreen = false
     @Published var windowSize: CGSize = CGSize(width: 1200, height: 860)
     @Published var menusNeedRelaunch = false
     /// Language the process actually started with; the menu bar is frozen to it.

@@ -34,8 +34,8 @@ struct SettingsSheet: View {
                 }
             }
         }
-        .frame(width: max(600, model.windowSize.width * 0.60),
-               height: max(560, model.windowSize.height * 0.82))
+        .frame(width: min(max(560, model.windowSize.width * 0.92), 760),
+               height: min(max(520, model.windowSize.height * 0.92), 720))
         .onAppear {
             if model.settings.activeProviderID == nil {
                 model.settings.activeProviderID = model.settings.providers.first?.id

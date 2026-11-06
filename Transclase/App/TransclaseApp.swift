@@ -13,7 +13,7 @@ struct TransclaseApp: App {
             RootView()
                 .environmentObject(model)
         }
-        .defaultSize(width: 1200, height: 860)
+        .defaultSize(width: 880, height: 560)
         .commands {
             CommandMenu(L("课程")) {
                 Button(model.isRunning ? L("停止") : L("开始")) {
