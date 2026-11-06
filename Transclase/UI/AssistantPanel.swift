@@ -69,7 +69,7 @@ struct AssistantPanel: View {
             Menu {
                 Picker(L("总结间隔"), selection: $model.settings.summaryIntervalMinutes) {
                     ForEach(Array(stride(from: 1, through: 10, by: 1)), id: \.self) { m in
-                        Text("每 \(m) 分钟").tag(m)
+                        Text(String(format: NSLocalizedString("每 %d 分钟", comment: ""), m)).tag(m)
                     }
                 }
                 Toggle(L("自动总结"), isOn: $model.settings.assistantEnabled)

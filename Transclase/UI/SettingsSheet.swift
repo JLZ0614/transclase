@@ -73,7 +73,7 @@ struct SettingsSheet: View {
 
             if model.menusNeedRelaunch {
                 HStack {
-                    Text("顶部菜单栏会在下次启动时同步。")
+                    Text(L("顶部菜单栏会在下次启动时同步。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -298,7 +298,7 @@ struct SettingsSheet: View {
             LabeledContent(L("总结间隔")) {
                 Picker("", selection: $model.settings.summaryIntervalMinutes) {
                     ForEach(Array(1...10), id: \.self) { m in
-                        Text("每 \(m) 分钟").tag(m)
+                        Text(String(format: NSLocalizedString("每 %d 分钟", comment: ""), m)).tag(m)
                     }
                 }
                 .labelsHidden()

@@ -91,7 +91,7 @@ struct RootView: View {
             Button(L("清空"), role: .destructive) { model.clear() }
             Button(L("取消"), role: .cancel) { model.pendingClearConfirmation = false }
         } message: {
-            Text("当前 \(model.captions.count) 段内容会被删除，且无法恢复。想留档的话先导出。")
+            Text(String(format: NSLocalizedString("当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。", comment: ""), model.captions.count))
         }
         .fileExporter(
             isPresented: Binding(
@@ -260,7 +260,7 @@ struct EmptyStateView: View {
             if let progress = model.speechProgress {
                 VStack(alignment: .leading, spacing: 3) {
                     ProgressView(value: progress).progressViewStyle(.linear)
-                    Text("正在下载识别模型 \(Int(progress * 100))%")
+                    Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

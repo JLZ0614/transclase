@@ -61,6 +61,24 @@ EXTRA = {
     "刚刚": {"en": "Just now", "es": "Ahora mismo", "fr": "À l'instant",
              "de": "Gerade eben", "ja": "たった今", "ko": "방금"},
     "打开": {"en": "Open", "es": "Abrir", "fr": "Ouvrir", "de": "Öffnen", "ja": "開く", "ko": "열기"},
+    "每 %d 分钟": {"en": "Every %d min", "es": "Cada %d min", "fr": "Toutes les %d min",
+                   "de": "Alle %d Min.", "ja": "%d 分ごと", "ko": "%d분마다"},
+    "当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。": {
+        "en": "All %d segments will be deleted and cannot be recovered. Export first if you want to keep them.",
+        "es": "Se eliminarán los %d segmentos y no se podrán recuperar. Exporta primero si quieres conservarlos.",
+        "fr": "Les %d segments seront supprimés sans possibilité de récupération. Exportez avant si vous voulez les garder.",
+        "de": "Alle %d Abschnitte werden gelöscht und können nicht wiederhergestellt werden. Exportiere vorher, wenn du sie behalten willst.",
+        "ja": "%d 件の段落が削除され、元に戻せません。残す場合は先に書き出してください。",
+        "ko": "%d개 구간이 삭제되며 복구할 수 없습니다. 보관하려면 먼저 내보내세요.",
+    },
+    "顶部菜单栏会在下次启动时同步。": {
+        "en": "The menu bar updates on next launch.",
+        "es": "La barra de menús se actualizará al reiniciar.",
+        "fr": "La barre des menus sera mise à jour au prochain lancement.",
+        "de": "Die Menüleiste wird beim nächsten Start aktualisiert.",
+        "ja": "メニューバーは次回起動時に更新されます。",
+        "ko": "메뉴 막대는 다음 실행 시 업데이트됩니다.",
+    },
 }
 
 keys = json.loads(SRC.read_text()) + list(EXTRA)

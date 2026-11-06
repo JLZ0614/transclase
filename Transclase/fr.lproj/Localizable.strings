@@ -147,3 +147,6 @@
 "深色" = "Sombre";
 "刚刚" = "À l'instant";
 "打开" = "Ouvrir";
+"每 %d 分钟" = "Toutes les %d min";
+"当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。" = "Les %d segments seront supprimés sans possibilité de récupération. Exportez avant si vous voulez les garder.";
+"顶部菜单栏会在下次启动时同步。" = "La barre des menus sera mise à jour au prochain lancement.";

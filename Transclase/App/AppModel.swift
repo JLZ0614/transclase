@@ -495,7 +495,7 @@ final class AppModel: ObservableObject {
     func openSession(_ session: LectureSession) async {
         if isRunning { await stop() }
         let loaded = SessionStore.load(session)
-        pipeline.clear()
+        pipeline.load(loaded.captions)
         captions = loaded.captions
         summaries = loaded.summaries
         chat = []

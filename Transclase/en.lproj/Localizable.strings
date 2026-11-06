@@ -147,3 +147,6 @@
 "深色" = "Dark";
 "刚刚" = "Just now";
 "打开" = "Open";
+"每 %d 分钟" = "Every %d min";
+"当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。" = "All %d segments will be deleted and cannot be recovered. Export first if you want to keep them.";
+"顶部菜单栏会在下次启动时同步。" = "The menu bar updates on next launch.";

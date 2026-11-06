@@ -147,3 +147,6 @@
 "深色" = "Dunkel";
 "刚刚" = "Gerade eben";
 "打开" = "Öffnen";
+"每 %d 分钟" = "Alle %d Min.";
+"当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。" = "Alle %d Abschnitte werden gelöscht und können nicht wiederhergestellt werden. Exportiere vorher, wenn du sie behalten willst.";
+"顶部菜单栏会在下次启动时同步。" = "Die Menüleiste wird beim nächsten Start aktualisiert.";

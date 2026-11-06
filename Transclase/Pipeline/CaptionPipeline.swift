@@ -346,6 +346,17 @@ final class CaptionPipeline {
         }
     }
 
+    /// Replaces the buffer with a restored transcript (opening a past lecture)
+    /// so continued recording appends instead of starting from empty.
+    func load(_ restored: [Caption]) {
+        flushTask?.cancel()
+        flushTask = nil
+        sentenceID = nil
+        sentenceText = ""
+        captions = restored
+        publish()
+    }
+
     func clear() {
         flushTask?.cancel()
         flushTask = nil
