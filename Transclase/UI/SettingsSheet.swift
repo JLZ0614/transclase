@@ -14,6 +14,15 @@ struct SettingsSheet: View {
         return "\(short) (\(build))"
     }
 
+    /// A sheet must never exceed its parent window — clamp to the window minus a
+    /// margin, whatever the window's current size is.
+    private var sheetSize: CGSize {
+        let window = model.windowSize
+        let width = min(max(460, window.width * 0.72), min(640, window.width - 60))
+        let height = min(max(360, window.height * 0.78), min(560, window.height - 90))
+        return CGSize(width: width, height: height)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -34,8 +43,7 @@ struct SettingsSheet: View {
                 }
             }
         }
-        .frame(width: min(max(560, model.windowSize.width * 0.92), 760),
-               height: min(max(520, model.windowSize.height * 0.92), 720))
+        .frame(width: sheetSize.width, height: sheetSize.height)
         .onAppear {
             if model.settings.activeProviderID == nil {
                 model.settings.activeProviderID = model.settings.providers.first?.id
