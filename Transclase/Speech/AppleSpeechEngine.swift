@@ -82,7 +82,7 @@ final class AppleSpeechEngine: ASREngine {
 
     func start() async throws {
         guard let analyzer, let transcriber else {
-            throw ASRError.engineFailed("识别器尚未准备")
+            throw ASRError.engineFailed(L("识别器尚未准备"))
         }
 
         let (inputStream, inputContinuation) = AsyncStream<AnalyzerInput>.makeStream(
@@ -112,7 +112,7 @@ final class AppleSpeechEngine: ASREngine {
         }
 
         try await analyzer.start(inputSequence: inputStream)
-        eventContinuation.yield(.status("识别中"))
+        eventContinuation.yield(.status(L("识别中")))
     }
 
     func append(_ buffer: AVAudioPCMBuffer) {

@@ -10,13 +10,13 @@ enum AudioError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "没有麦克风权限。请到系统设置中允许 Transclase 使用麦克风。"
+            return L("没有麦克风权限。请到系统设置中允许 Transclase 使用麦克风。")
         case .noInputDevice:
-            return "找不到可用的麦克风。请检查音频输入设备。"
+            return L("找不到可用的麦克风。请检查音频输入设备。")
         case .engineFailed(let message):
             return "音频引擎启动失败：\(message)"
         case .conversionUnavailable:
-            return "无法在麦克风格式和识别模型格式之间转换。"
+            return L("无法在麦克风格式和识别模型格式之间转换。")
         }
     }
 }

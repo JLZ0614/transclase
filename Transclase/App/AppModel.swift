@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 import Speech
@@ -9,7 +10,7 @@ final class AppModel: ObservableObject {
     @Published var captions: [Caption] = []
     @Published var isRunning = false
     @Published var isPreparing = false
-    @Published var statusText = "就绪"
+    @Published var statusText = L("就绪")
     @Published var errorMessage: String?
     @Published var level: Float = 0
     @Published var scrollGeneration = 0
@@ -18,11 +19,27 @@ final class AppModel: ObservableObject {
     @Published var translationConfiguration: TranslationSession.Configuration?
     @Published var translationNote: String?
     @Published var translationEngineLabel = "—"
-    @Published var languagePackStatus = "未知"
+    @Published var languagePackStatus = L("未知")
     @Published var pendingClearConfirmation = false
     @Published var speechProgress: Double?
     @Published var isPreparingPack = false
-    @Published var engineTestResult: String?
+    @Published var sessions: [LectureSession] = []
+    @Published var currentSession: LectureSession?
+    @Published var summaries: [SummaryBlock] = []
+    @Published var assistantBusy = false
+    @Published var assistantError: String?
+    @Published var chat: [AssistantTurn] = []
+    @Published var providerModels: [String] = []
+    @Published var isLoadingModels = false
+    @Published var modelListError: String?
+    /// Changes whenever the interface language changes, so the view tree can be
+    /// rebuilt without relaunching.
+    @Published var localizationToken = UUID()
+    @Published var windowSize: CGSize = CGSize(width: 1200, height: 860)
+    @Published var menusNeedRelaunch = false
+    /// Language the process actually started with; the menu bar is frozen to it.
+    private let launchLanguage = AppSettings.load().appLanguage
+    @Published var engineTestResult: String? 
     @Published var isTestingEngine = false
     @Published var exportDocument: MarkdownDocument?
     @Published var isExporting = false
@@ -33,6 +50,9 @@ final class AppModel: ObservableObject {
     private let pipeline = CaptionPipeline()
     private var markdownCache: (stamp: Int, text: String) = (-1, "")
     private var transientDemo = false
+    private var summaryTask: Task<Void, Never>?
+    private var summarizedCaptionCount = 0
+    private var persistedFinalCount = 0
     private var translationSession: TranslationSession?
 
     init() {
@@ -66,21 +86,20 @@ final class AppModel: ObservableObject {
     /// app permanently in demo mode.
     var isDemoActive: Bool { settings.demoMode || Self.wantsDemo || transientDemo }
 
-    /// "看演示" must not flip a persisted setting — otherwise the app stays in
+    /// L("看演示") must not flip a persisted setting — otherwise the app stays in
     /// fake-lecture mode forever and the next real session is nonsense.
     func playDemo() async {
         transientDemo = true
         await start()
     }
 
-    var isFoundationModelAvailable: Bool { FoundationModelTranslationEngine.isAvailable }
 
     /// Recognition model for the chosen source locale is on disk.
     var isSpeechModelInstalled: Bool {
         speechOptions.first { $0.id == settings.sourceLanguageID }?.isInstalled ?? false
     }
 
-    var isTranslationPackInstalled: Bool { languagePackStatus == "已安装" }
+    var isTranslationPackInstalled: Bool { languagePackStatus == L("已安装") }
 
     /// Everything needed to work with no network and no further downloads.
     var isReadyOffline: Bool {
@@ -92,6 +111,7 @@ final class AppModel: ObservableObject {
     var translationLanguages: Set<String> { Set(translationOptions.map(\.id)) }
 
     func bootstrap() async {
+        applyStoredLanguage()
         guard speechOptions.isEmpty else {
             isBootstrapping = false
             return
@@ -149,7 +169,7 @@ final class AppModel: ObservableObject {
 
     func refreshLanguagePackStatus() async {
         guard !isDemoActive else {
-            languagePackStatus = "演示模式无需语言包"
+            languagePackStatus = L("演示模式无需语言包")
             return
         }
         let status = await LanguageAvailability().status(
@@ -158,11 +178,11 @@ final class AppModel: ObservableObject {
         )
         switch status {
         case .installed:
-            languagePackStatus = "已安装"
+            languagePackStatus = L("已安装")
         case .supported:
-            languagePackStatus = "未下载"
+            languagePackStatus = L("未下载")
         default:
-            languagePackStatus = "不支持该语言对"
+            languagePackStatus = L("不支持该语言对")
         }
     }
 
@@ -173,10 +193,10 @@ final class AppModel: ObservableObject {
         syncTranslationConfiguration(force: true)
         try? await Task.sleep(for: .seconds(3))
         await refreshLanguagePackStatus()
-        if languagePackStatus != "已安装" {
-            translationNote = "没看到下载面板的话，去 系统设置 → 通用 → 语言与地区 → 翻译语言，手动添加该语言。"
+        if languagePackStatus != L("已安装") {
+            translationNote = L("没看到下载面板的话，去 系统设置 → 通用 → 语言与地区 → 翻译语言，手动添加该语言。")
         } else {
-            translationNote = "语言包已安装，重启一次识别后生效。"
+            translationNote = L("语言包已安装，重启一次识别后生效。")
         }
     }
 
@@ -201,11 +221,11 @@ final class AppModel: ObservableObject {
             )
             switch status {
             case .installed:
-                self.translationNote = "语言包已就绪（全程离线）"
+                self.translationNote = L("语言包已就绪（全程离线）")
             case .supported:
-                self.translationNote = "语言包尚未下载：点上面的按钮，在系统面板里确认下载"
+                self.translationNote = L("语言包尚未下载：点上面的按钮，在系统面板里确认下载")
             default:
-                self.translationNote = "这台设备不支持这个语言对"
+                self.translationNote = L("这台设备不支持这个语言对")
             }
         }
     }
@@ -222,11 +242,6 @@ final class AppModel: ObservableObject {
 
     // MARK: - Translation engine
 
-    func saveCloudAPIKey(_ key: String) {
-        Keychain.save(key, for: "cloudAPIKey")
-    }
-
-    var hasCloudAPIKey: Bool { Keychain.load("cloudAPIKey") != nil }
 
     /// Sends one throw-away sentence through the selected engine so the user can
     /// tell "config wrong" from "model slow".
@@ -238,17 +253,18 @@ final class AppModel: ObservableObject {
 
         let s = settings
         let isCloud = s.translationEngine == .cloud
-        let urlString = isCloud ? s.cloudBaseURL : s.localBaseURL
-        let model = isCloud ? s.cloudModel : s.localModel
+        let provider = activeProvider
+        let urlString = isCloud ? (provider?.baseURL ?? "") : s.localBaseURL
+        let model = isCloud ? (provider?.model ?? "") : s.localModel
         guard let url = URL(string: urlString) else {
-            engineTestResult = "地址无效"
+            engineTestResult = L("地址无效")
             return
         }
 
         let engine = OpenAICompatibleEngine(
             baseURL: url,
             model: model,
-            apiKey: isCloud ? Keychain.load("cloudAPIKey") : nil,
+            apiKey: isCloud ? provider.flatMap { providerKey($0) } : nil,
             sourceName: LanguageMapping.displayName(forBCP47: s.sourceLanguageID),
             targetName: LanguageMapping.promptName(for: s.targetLanguageID)
         )
@@ -334,10 +350,13 @@ final class AppModel: ObservableObject {
             )
             isRunning = true
             startedAt = Date()
+            if currentSession == nil { currentSession = SessionStore.create() }
+            refreshSessions()
+            startSummaryTimer()
         } catch {
             await pipeline.stop()
             errorMessage = error.localizedDescription
-            statusText = "启动失败"
+            statusText = L("启动失败")
             isRunning = false
         }
     }
@@ -348,6 +367,8 @@ final class AppModel: ObservableObject {
         isRunning = false
         level = 0
         transientDemo = false
+        stopSummaryTimer()
+        persistTranscript()
     }
 
     func requestClear() {
@@ -380,10 +401,234 @@ final class AppModel: ObservableObject {
         startedAt = nil
         pendingClearConfirmation = false
         markdownCache = (-1, "")
+        // Summaries describe captions that no longer exist.
+        summarizedCaptionCount = 0
+        persistedFinalCount = 0
+        summaries = []
+        chat = []
     }
 
     func saveSettings() {
         settings.save()
+    }
+
+    /// Applies a language change and restarts, the only way AppKit will rebuild
+    /// its menus in the new language.
+    /// Reconciles AppleLanguages with the stored choice, so a leftover override
+    /// cannot survive after switching back to "follow system".
+    func applyStoredLanguage() {
+        settings.appLanguage.apply()
+        L10n.set(settings.appLanguage.localeIdentifier)
+    }
+
+    /// Switches the interface language immediately. The macOS menu bar keeps the
+    /// old language until the next launch — AppKit builds it once.
+    func switchLanguage(_ language: AppLanguage) {
+        L10n.set(language.localeIdentifier)
+        localizationToken = UUID()
+        // The menu bar only matches after a relaunch, whatever the target is.
+        menusNeedRelaunch = language != launchLanguage
+    }
+
+    func relaunch() {
+        let url = Bundle.main.bundleURL
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
+            DispatchQueue.main.async {
+                guard error == nil else {
+                    self.errorMessage = L("重启失败，请手动退出后重新打开")
+                    return
+                }
+                NSApp.terminate(nil)
+            }
+        }
+    }
+
+    // MARK: - Sessions
+
+    /// Writes the finished transcript into the session markdown file.
+    private func persistTranscript() {
+        guard let session = currentSession else { return }
+        let finals = Array(captions.filter(\.isFinal).dropFirst(persistedFinalCount))
+        guard !finals.isEmpty else { return }
+        persistedFinalCount += finals.count
+        var body = "\n## 逐字稿\n\n"
+        for caption in finals {
+            body += "**[\(SessionExport.timecode(caption.start))]**\n\n> \(caption.source)\n\n"
+            if let target = caption.target, !target.isEmpty {
+                body += "\(target)\n\n"
+            }
+        }
+        SessionStore.append(body, to: session)
+    }
+
+    func refreshSessions() {
+        sessions = SessionStore.list()
+    }
+
+    /// Starts a new lecture: fresh captions, fresh markdown document.
+    func newConversation() async {
+        // Stop first: the previous lecture's transcript is written during stop,
+        // and clearing before that would lose it.
+        if isRunning { await stop() }
+        pipeline.clear()
+
+        let session = SessionStore.create()
+        currentSession = session
+        summaries = []
+        chat = []
+        summarizedCaptionCount = 0
+        persistedFinalCount = 0
+        assistantError = nil
+        captions.removeAll()
+        startedAt = nil
+        refreshSessions()
+    }
+
+    func openInFinder(_ session: LectureSession) {
+        NSWorkspace.shared.activateFileViewerSelecting([session.url])
+    }
+
+    // MARK: - Assistant
+
+    var activeProvider: ModelProvider? {
+        settings.providers.first { $0.id == settings.activeProviderID } ?? settings.providers.first
+    }
+
+    func updateProvider(_ id: UUID, mutate: (inout ModelProvider) -> Void) {
+        guard let index = settings.providers.firstIndex(where: { $0.id == id }) else { return }
+        mutate(&settings.providers[index])
+    }
+
+    func loadModels(for provider: ModelProvider) async {
+        guard let url = URL(string: provider.baseURL) else { return }
+        isLoadingModels = true
+        modelListError = nil
+        defer { isLoadingModels = false }
+        do {
+            let ids = try await LLMClient(
+                baseURL: url,
+                model: provider.model,
+                apiKey: providerKey(provider)
+            ).listModels()
+            providerModels = ids
+            if !ids.contains(provider.model) {
+                modelListError = L("当前模型不在列表里，仍可手动填写。")
+            }
+        } catch {
+            providerModels = []
+            modelListError = "拉取失败：\(error.localizedDescription)"
+        }
+    }
+
+    func providerKey(_ provider: ModelProvider) -> String? {
+        CredentialStore.load("provider.\(provider.id.uuidString)")
+    }
+
+    func saveProviderKey(_ provider: ModelProvider, key: String) {
+        CredentialStore.save(key, for: "provider.\(provider.id.uuidString)")
+    }
+
+    private func assistantClient() -> LLMClient? {
+        guard let provider = activeProvider, let url = URL(string: provider.baseURL) else { return nil }
+        guard let key = providerKey(provider) else {
+            assistantError = "先在「模型」里给 \(provider.name) 填入 API Key，助手才能工作。"
+            return nil
+        }
+        return LLMClient(baseURL: url, model: provider.model, apiKey: key)
+    }
+
+    private var assistantLanguage: String {
+        settings.targetLanguageID.hasPrefix("zh") ? "Simplified Chinese" : "the target language"
+    }
+
+    private func transcript(since index: Int, limit: Int = 400) -> (text: String, range: String) {
+        let finals = captions.filter(\.isFinal)
+        let slice = finals.dropFirst(index).suffix(limit)
+        let text = slice
+            .map { "[\(SessionExport.timecode($0.start))] \($0.source)" }
+            .joined(separator: "\n")
+        let start = slice.first.map { SessionExport.timecode($0.start) } ?? "00:00"
+        let end = slice.last.map { SessionExport.timecode($0.end) } ?? "00:00"
+        return (text, "\(start)–\(end)")
+    }
+
+    func summarizeNow() async {
+        guard !assistantBusy else { return }
+        guard let client = assistantClient() else { return }
+
+        let (text, range) = transcript(since: summarizedCaptionCount)
+        guard !text.isEmpty else {
+            assistantError = L("还没有可总结的内容。")
+            return
+        }
+
+        assistantBusy = true
+        assistantError = nil
+        defer { assistantBusy = false }
+
+        do {
+            let markdown = try await client.complete(
+                messages: AssistantPrompts.summary(transcript: text, targetLanguage: assistantLanguage)
+            )
+            let block = SummaryBlock(createdAt: Date(), range: range, markdown: markdown)
+            summaries.append(block)
+            summarizedCaptionCount = captions.filter(\.isFinal).count
+
+            if let session = currentSession {
+                SessionStore.append("\n## 要点 \(range)\n\n\(markdown)\n", to: session)
+            }
+        } catch {
+            assistantError = error.localizedDescription
+        }
+    }
+
+    func ask(_ question: String) async {
+        let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let client = assistantClient() else { return }
+
+        chat.append(AssistantTurn(isUser: true, text: trimmed))
+        assistantBusy = true
+        assistantError = nil
+        defer { assistantBusy = false }
+
+        let (text, _) = transcript(since: 0, limit: 300)
+        do {
+            let answer = try await client.complete(
+                messages: AssistantPrompts.answer(
+                    question: trimmed,
+                    transcript: text,
+                    targetLanguage: assistantLanguage
+                )
+            )
+            chat.append(AssistantTurn(isUser: false, text: answer))
+        } catch {
+            assistantError = error.localizedDescription
+        }
+    }
+
+    func refreshSummaryTimer() {
+        guard isRunning else { return }
+        startSummaryTimer()
+    }
+
+    func startSummaryTimer() {
+        summaryTask?.cancel()
+        guard settings.assistantEnabled else { return }
+        let seconds = UInt64(max(1, min(10, settings.summaryIntervalMinutes))) * 60
+        summaryTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+                guard !Task.isCancelled else { break }
+                await self?.summarizeNow()
+            }
+        }
+    }
+
+    func stopSummaryTimer() {
+        summaryTask?.cancel()
+        summaryTask = nil
     }
 
     // MARK: - Derived values

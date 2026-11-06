@@ -17,7 +17,7 @@ enum ASRError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unavailable:
-            return "此设备不支持系统语音识别模型。"
+            return L("此设备不支持系统语音识别模型。")
         case .unsupportedLocale(let locale):
             return "系统语音识别不支持 \(locale)。请换一个语言，或升级系统。"
         case .modelDownloadFailed(let message):

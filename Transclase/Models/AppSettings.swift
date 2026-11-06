@@ -7,6 +7,7 @@ import Foundation
 struct AppSettings: Codable, Equatable {
     var sourceLanguageID: String = "en-US"
     var targetLanguageID: String = "zh-Hans"
+    var appLanguage: AppLanguage = .system
     var showOriginal: Bool = true
     var fontSize: Double = 24
     var demoMode: Bool = false
@@ -19,6 +20,14 @@ struct AppSettings: Codable, Equatable {
     var cloudBaseURL: String = "https://api.deepseek.com/v1"
     var cloudModel: String = "deepseek-chat"
 
+    // Model providers (the「模型」pane manages this list)
+    var providers: [ModelProvider] = [.preset()]
+    var activeProviderID: UUID?
+
+    // Assistant
+    var assistantEnabled: Bool = false
+    var summaryIntervalMinutes: Int = 5
+
     private static let storageKey = "transclase.settings.v1"
 
     init() {}
@@ -26,6 +35,8 @@ struct AppSettings: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case sourceLanguageID, targetLanguageID, showOriginal, fontSize, demoMode, autoScroll
         case translationEngine, localBaseURL, localModel, cloudBaseURL, cloudModel
+        case providers, activeProviderID, appLanguage
+        case assistantEnabled, summaryIntervalMinutes
     }
 
     init(from decoder: Decoder) throws {
@@ -42,6 +53,11 @@ struct AppSettings: Codable, Equatable {
         localModel = try c.decodeIfPresent(String.self, forKey: .localModel) ?? d.localModel
         cloudBaseURL = try c.decodeIfPresent(String.self, forKey: .cloudBaseURL) ?? d.cloudBaseURL
         cloudModel = try c.decodeIfPresent(String.self, forKey: .cloudModel) ?? d.cloudModel
+        appLanguage = try c.decodeIfPresent(AppLanguage.self, forKey: .appLanguage) ?? d.appLanguage
+        providers = try c.decodeIfPresent([ModelProvider].self, forKey: .providers) ?? d.providers
+        activeProviderID = try c.decodeIfPresent(UUID.self, forKey: .activeProviderID) ?? d.activeProviderID
+        assistantEnabled = try c.decodeIfPresent(Bool.self, forKey: .assistantEnabled) ?? d.assistantEnabled
+        summaryIntervalMinutes = try c.decodeIfPresent(Int.self, forKey: .summaryIntervalMinutes) ?? d.summaryIntervalMinutes
     }
 
     static func load() -> AppSettings {

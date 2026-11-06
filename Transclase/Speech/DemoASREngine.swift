@@ -23,7 +23,7 @@ final class DemoASREngine: ASREngine {
     }
 
     func prepare(locale: Locale) async throws {
-        eventContinuation.yield(.status("演示模式"))
+        eventContinuation.yield(.status(L("演示模式")))
     }
 
     func start() async throws {

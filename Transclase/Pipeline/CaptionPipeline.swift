@@ -56,7 +56,7 @@ final class CaptionPipeline {
         // lecture". Wiping here loses the transcript on a mis-tapped stop.
         sessionSeq += 1
 
-        onStatus?("正在准备识别模型…")
+        onStatus?(L("正在准备识别模型…"))
 
         let recognizer: ASREngine = settings.demoMode ? DemoASREngine() : AppleSpeechEngine()
         if let apple = recognizer as? AppleSpeechEngine {
@@ -70,11 +70,11 @@ final class CaptionPipeline {
         // Pick a translator. The user's choice wins; if it cannot start we fall
         // back to Apple's on-device engine rather than losing translation.
         translationEnabled = true
-        var engineLabel = "系统离线翻译"
+        var engineLabel = L("系统离线翻译")
         var translator: MTEngine
 
         if settings.demoMode {
-            engineLabel = "演示翻译"
+            engineLabel = L("演示翻译")
             translator = DemoMTEngine()
         } else {
             let sourceName = LanguageMapping.displayName(forBCP47: settings.sourceLanguageID)
@@ -92,9 +92,10 @@ final class CaptionPipeline {
 
             case .localQwen, .cloud:
                 let isCloud = settings.translationEngine == .cloud
-                let urlString = isCloud ? settings.cloudBaseURL : settings.localBaseURL
-                let model = isCloud ? settings.cloudModel : settings.localModel
-                let key = isCloud ? Keychain.load("cloudAPIKey") : nil
+                let provider = settings.providers.first { $0.id == settings.activeProviderID } ?? settings.providers.first
+                let urlString = isCloud ? (provider?.baseURL ?? "") : settings.localBaseURL
+                let model = isCloud ? (provider?.model ?? "") : settings.localModel
+                let key = isCloud ? provider.flatMap { CredentialStore.load("provider.\($0.id.uuidString)") } : nil
                 let label = isCloud ? "云端 · \(model)" : "本地 · \(model)"
 
                 if let url = URL(string: urlString) {
@@ -120,7 +121,7 @@ final class CaptionPipeline {
                         )
                     }
                 } else {
-                    onError?("翻译引擎地址无效，已改用系统翻译。")
+                    onError?(L("翻译引擎地址无效，已改用系统翻译。"))
                     (translator, engineLabel, translationEnabled) = await Self.appleTranslator(
                         settings: settings,
                         sourceName: sourceName,
@@ -150,9 +151,9 @@ final class CaptionPipeline {
             }
         }
 
-        onStatus?("启动中…")
+        onStatus?(L("启动中…"))
         try await recognizer.start()
-        onStatus?(settings.demoMode ? "演示模式运行中" : "正在听课…")
+        onStatus?(settings.demoMode ? L("演示模式运行中") : L("正在听课…"))
     }
 
     /// Apple's on-device path, including the language-pack check and the Apple
@@ -172,24 +173,15 @@ final class CaptionPipeline {
         if status == .installed {
             return (
                 AppleTranslationEngine(source: source, target: target, sessionProvider: sessionProvider),
-                "系统离线翻译",
+                L("系统离线翻译"),
                 true
             )
         }
 
-        if FoundationModelTranslationEngine.isAvailable {
-            onError?("这个语言对的离线语言包还没下载，暂时改用 Apple 智能本地模型翻译。下载语言包后质量会更好。")
-            return (
-                FoundationModelTranslationEngine(sourceName: sourceName, targetName: targetName),
-                "Apple 智能（本地兜底）",
-                true
-            )
-        }
-
-        onError?("离线语言包没下载，本机也没有可用的 Apple 智能模型，先只显示原文。到设置里点“下载语言包”即可开启翻译。")
+        onError?(L("离线语言包还没下载，先只显示原文。到设置里点“下载语言包”即可开启翻译。"))
         return (
             AppleTranslationEngine(source: source, target: target, sessionProvider: sessionProvider),
-            "仅原文",
+            L("仅原文"),
             false
         )
     }
@@ -248,7 +240,7 @@ final class CaptionPipeline {
         asr = nil
         mt = nil
         onLevel?(0)
-        onStatus?("已停止")
+        onStatus?(L("已停止"))
     }
 
     // MARK: - Events
