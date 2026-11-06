@@ -89,7 +89,12 @@ struct SidebarView: View {
         }
         .background {
             // A touch of transparent black, not a grey plate.
-            Color.black.opacity(colorScheme == .dark ? 0.38 : 0.05)
+            Color.black.opacity(colorScheme == .dark ? 0.38 : 0.06)
+        }
+        .overlay(alignment: .trailing) {
+            Rectangle()
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.10))
+                .frame(width: 1)
         }
     }
 }
@@ -99,8 +104,10 @@ private struct SessionRow: View {
     let isCurrent: Bool
 
     private var relative: String {
+        let seconds = Date().timeIntervalSince(session.createdAt)
+        if seconds < 60 { return L("刚刚") }
         let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "zh_Hans_CN")
+        formatter.locale = L10n.locale
         formatter.unitsStyle = .short
         return formatter.localizedString(for: session.createdAt, relativeTo: Date())
     }

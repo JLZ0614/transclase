@@ -77,6 +77,7 @@ struct CaptionListView: View {
 struct CaptionRow: View {
     let caption: Caption
     @EnvironmentObject private var model: AppModel
+    @Environment(\.colorScheme) private var colorScheme
 
     private var isTranslating: Bool {
         caption.isFinal && caption.state == .pending
@@ -87,7 +88,8 @@ struct CaptionRow: View {
             if model.settings.showOriginal {
                 Text(caption.source)
                     .font(.system(size: model.settings.fontSize * 0.72))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(colorScheme == .dark ? AnyShapeStyle(.secondary)
+                                                          : AnyShapeStyle(Color.primary.opacity(0.62)))
                     .opacity(caption.isFinal ? 1 : 0.75)
             }
 

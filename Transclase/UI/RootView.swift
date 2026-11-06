@@ -13,6 +13,7 @@ struct RootView: View {
             content
         }
         .toolbarBackground(.hidden, for: .windowToolbar)
+        .windowToolbarFullScreenVisibility(.onHover)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
@@ -306,6 +307,18 @@ private struct WindowSizer: NSViewRepresentable {
             // No window/sheet restoration: a restored sheet would greet the user
             // with a dialog they never opened.
             window.isRestorable = false
+            // Let the window's own backdrop show through the titlebar / full-screen
+            // toolbar strip instead of AppKit drawing a grey material there.
+            window.titlebarAppearsTransparent = true
+            window.styleMask.insert(.fullSizeContentView)
+            // In full screen AppKit paints the toolbar strip with the window
+            // background colour, which reads as a grey band above the black
+            // content. Match it to the backdrop instead.
+            window.backgroundColor = NSColor(name: nil) { appearance in
+                appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                    ? .black
+                    : .underPageBackgroundColor
+            }
             window.minSize = NSSize(width: 1000, height: 680)
             if window.frame.width < 1100 || window.frame.height < 700 {
                 window.setContentSize(NSSize(width: 1200, height: 860))
