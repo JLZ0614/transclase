@@ -38,15 +38,21 @@ enum LanguageMapping {
         }
     }
 
-    /// The UI is Simplified Chinese, so language names should be too — otherwise
-    /// a Spanish-language Mac shows "Spanish (Spain) → Chinese" inside a Chinese
-    /// interface.
-    private static let displayLocale = Locale(identifier: "zh-Hans")
+    /// Chinese is the one case where two supported languages render with the
+    /// same name, so the script is stated explicitly.
+    static func isTraditionalChinese(_ identifier: String) -> Bool {
+        let lower = identifier.lowercased()
+        return lower.contains("hant") || lower.contains("tw")
+            || lower.contains("hk") || lower.contains("mo")
+    }
 
+    /// Language names follow the interface language: an English UI shows
+    /// "English (US) → Chinese", a Japanese UI shows them in Japanese.
     static func displayName(forBCP47 id: String) -> String {
-        displayLocale.localizedString(forIdentifier: id)
-            ?? Locale.current.localizedString(forIdentifier: id)
-            ?? id
+        if id.lowercased().hasPrefix("zh") {
+            return L(isTraditionalChinese(id) ? "繁體中文" : "简体中文")
+        }
+        return L10n.locale.localizedString(forIdentifier: id) ?? id
     }
 
     /// Target name used inside model prompts. Generic names like "Chinese"
@@ -54,18 +60,20 @@ enum LanguageMapping {
     static func promptName(for id: String) -> String {
         switch id {
         case "zh-Hans", "zh-CN", "zh-SG", "zh":
-            return "Simplified Chinese (简体中文)"
+            return L("Simplified Chinese (简体中文)")
         case "zh-Hant", "zh-TW", "zh-HK":
-            return "Traditional Chinese (繁體中文)"
+            return L("Traditional Chinese (繁體中文)")
         default:
             return displayName(forBCP47: id)
         }
     }
 
     static func displayName(forLanguage language: Locale.Language) -> String {
-        displayLocale.localizedString(forLanguageCode: language.minimalIdentifier)
-            ?? Locale.current.localizedString(forLanguageCode: language.minimalIdentifier)
-            ?? language.minimalIdentifier
+        let id = language.minimalIdentifier
+        if id.hasPrefix("zh") {
+            return L(isTraditionalChinese(id) ? "繁體中文" : "简体中文")
+        }
+        return L10n.locale.localizedString(forIdentifier: id) ?? id
     }
 }
 
