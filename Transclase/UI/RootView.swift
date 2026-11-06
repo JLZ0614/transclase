@@ -3,66 +3,56 @@ import Translation
 
 struct RootView: View {
     @EnvironmentObject private var model: AppModel
-    @Environment(\.scenePhase) private var scenePhase
     @State private var showSettings = false
+    @State private var showAssistant = true
+    @State private var showSidebar = true
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppBackdrop()
-
-                VStack(spacing: 0) {
-                    if let message = model.errorMessage {
-                        ErrorBanner(message: message) {
-                            model.errorMessage = nil
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    if model.captions.isEmpty {
-                        EmptyStateView()
-                    } else {
-                        CaptionListView()
-                    }
+        ZStack {
+            AppBackdrop()
+            content
+        }
+        .toolbarBackground(.hidden, for: .windowToolbar)
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { showSidebar.toggle() }
+                } label: {
+                    Image(systemName: "sidebar.left")
                 }
+                .help(L("显示 / 隐藏边栏"))
             }
-            .navigationTitle("")
-            .toolbarBackground(.hidden, for: .windowToolbar)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("设置")
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { showAssistant.toggle() }
+                } label: {
+                    Image(systemName: "sidebar.right")
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                ControlDock()
+                .help(L("翻译助手"))
             }
         }
-        .frame(minWidth: 620, minHeight: 520)
+        .id(model.localizationToken)
+        .background(WindowSizer().frame(width: 0, height: 0))
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { model.windowSize = geo.size }
+                    .onChange(of: geo.size) { _, newValue in model.windowSize = newValue }
+            }
+        )
+        .navigationTitle("")
         .animation(.snappy(duration: 0.25), value: model.errorMessage)
         .translationTask(model.translationConfiguration) { session in
             model.adoptTranslationSession(session)
         }
         .task {
-            if AppModel.wantsSelfTest {
-                await model.bootstrap()
-                await model.runSelfTest()
-                return
-            }
-            if AppModel.wantsDemo, model.captions.isEmpty {
-                // Demo mode is an explicit switch, so auto-play on launch — and
-                // do not make it wait for capability discovery.
-                await model.start()
-                await model.bootstrap()
-                return
-            }
             await model.bootstrap()
+            model.refreshSessions()
+            if AppModel.wantsSelfTest {
+                await model.runSelfTest()
+            } else if AppModel.wantsDemo, model.captions.isEmpty {
+                await model.start()
+            }
         }
         .onChange(of: model.settings.sourceLanguageID) { _, _ in
             model.syncTranslationConfiguration()
@@ -76,13 +66,30 @@ struct RootView: View {
         .onChange(of: model.settings) { _, _ in
             model.saveSettings()
         }
-        .onChange(of: scenePhase) { _, phase in
-            // Without a background-audio entitlement the capture session dies
-            // when iOS suspends us, so shut down cleanly instead of leaving a
-            // half-dead pipeline behind.
+        .onChange(of: model.settings.assistantEnabled) { _, _ in
+            if model.isRunning { model.startSummaryTimer() } else { model.stopSummaryTimer() }
+        }
+        .onChange(of: model.settings.summaryIntervalMinutes) { _, _ in
+            model.refreshSummaryTimer()
+        }
+        .confirmationDialog(
+            L("清空全部字幕？"),
+            isPresented: Binding(
+                get: { model.pendingClearConfirmation },
+                set: { model.pendingClearConfirmation = $0 }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L("清空"), role: .destructive) { model.clear() }
+            Button(L("取消"), role: .cancel) { model.pendingClearConfirmation = false }
+        } message: {
+            Text("当前 \(model.captions.count) 段内容会被删除，且无法恢复。想留档的话先导出。")
         }
         .fileExporter(
-            isPresented: $model.isExporting,
+            isPresented: Binding(
+                get: { model.isExporting },
+                set: { model.isExporting = $0 }
+            ),
             document: model.exportDocument,
             contentType: .markdownText,
             defaultFilename: model.exportFilename
@@ -90,18 +97,53 @@ struct RootView: View {
             model.exportDocument = nil
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView()
-                .environmentObject(model)
+            SettingsSheet().environmentObject(model)
         }
-        .confirmationDialog(
-            "清空全部字幕？",
-            isPresented: $model.pendingClearConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("清空", role: .destructive) { model.clear() }
-            Button("取消", role: .cancel) { model.pendingClearConfirmation = false }
-        } message: {
-            Text("当前 \(model.captions.count) 段内容会被删除，且无法恢复。想留档的话先导出。")
+    }
+
+    private var content: some View {
+        HStack(spacing: 0) {
+            if showSidebar {
+                SidebarView(showSettings: $showSettings)
+                    .frame(width: 260)
+                Divider()
+            }
+
+            mainColumn
+
+            if showAssistant {
+                Divider()
+                AssistantPanel()
+                    .environmentObject(model)
+                    .frame(width: 320)
+            }
+        }
+    }
+
+    private var mainColumn: some View {
+        ZStack {
+            Color.clear
+
+            VStack(spacing: 0) {
+                if let message = model.errorMessage {
+                    ErrorBanner(message: message) {
+                        model.errorMessage = nil
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
+                if model.captions.isEmpty {
+                    EmptyStateView()
+                } else {
+                    CaptionListView()
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            ControlDock()
         }
     }
 }
@@ -128,7 +170,7 @@ struct ErrorBanner: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("关闭提示")
+            .accessibilityLabel(L("关闭提示"))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
@@ -150,9 +192,9 @@ struct EmptyStateView: View {
                 .glassEffect(.regular, in: .circle)
 
             VStack(spacing: 7) {
-                Text("把设备放在桌上，点开始")
+                Text(L("点「新对话」开始一节课"))
                     .font(.title3.weight(.semibold))
-                Text("声音只在本机处理。识别用系统语音模型，翻译用系统离线语言包。")
+                Text(L("或者直接点下面的麦克风。声音只在本机处理。"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -160,14 +202,14 @@ struct EmptyStateView: View {
             }
 
             if model.settings.demoMode {
-                Label("演示模式：会播放一段模拟讲座", systemImage: "play.rectangle")
+                Label(L("演示模式：会播放一段模拟讲座"), systemImage: "play.rectangle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if model.isBootstrapping {
-                ProgressView("正在检查本机语言能力…")
+                ProgressView(L("正在检查本机语言能力…"))
                     .font(.caption)
             } else if model.speechOptions.isEmpty {
-                Label("这台设备没有可用的系统语音识别，可以先试试演示模式", systemImage: "exclamationmark.circle")
+                Label(L("这台设备没有可用的系统语音识别，可以先试试演示模式"), systemImage: "exclamationmark.circle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -176,32 +218,22 @@ struct EmptyStateView: View {
             }
 
             HStack(spacing: 12) {
-                if model.isDemoActive || model.isReadyOffline {
-                    Button {
-                        Task { await model.start() }
-                    } label: {
-                        Label("开始听课", systemImage: "mic.fill")
-                            .padding(.horizontal, 6)
+                Button {
+                    Task {
+                        if model.currentSession == nil { await model.newConversation() }
+                        await model.start()
                     }
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
-                } else {
-                    Button {
-                        Task { await model.prepareOfflinePack() }
-                    } label: {
-                        Label(model.isPreparingPack ? "准备中…" : "准备离线包",
-                              systemImage: "arrow.down.circle")
-                            .padding(.horizontal, 6)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
-                    .disabled(model.isPreparingPack)
+                } label: {
+                    Label(L("开始听课"), systemImage: "mic.fill")
+                        .padding(.horizontal, 6)
                 }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
 
                 Button {
                     Task { await model.playDemo() }
                 } label: {
-                    Text("看演示").padding(.horizontal, 6)
+                    Text(L("看演示")).padding(.horizontal, 6)
                 }
                 .buttonStyle(.glass)
                 .controlSize(.large)
@@ -212,32 +244,21 @@ struct EmptyStateView: View {
         .padding(28)
     }
 
-    /// Two-line checklist so nobody discovers mid-lecture that a download was
-    /// still pending.
     private var readinessCard: some View {
         VStack(alignment: .leading, spacing: 9) {
-            ReadinessRow(
-                title: "识别模型",
-                detail: model.sourceName,
-                ready: model.isSpeechModelInstalled
-            )
-            ReadinessRow(
-                title: "翻译语言包",
-                detail: model.pairLabel,
-                ready: model.isTranslationPackInstalled
-            )
+            ReadinessRow(title: L("识别模型"), detail: model.sourceName, ready: model.isSpeechModelInstalled)
+            ReadinessRow(title: L("翻译语言包"), detail: model.pairLabel, ready: model.isTranslationPackInstalled)
 
             if let progress = model.speechProgress {
                 VStack(alignment: .leading, spacing: 3) {
-                    ProgressView(value: progress)
-                        .progressViewStyle(.linear)
+                    ProgressView(value: progress).progressViewStyle(.linear)
                     Text("正在下载识别模型 \(Int(progress * 100))%")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 2)
             } else if !model.isReadyOffline {
-                Text("首次使用需要联网下载一次，约 400 MB。装好后上课全程离线。")
+                Text(L("首次使用需要联网下载一次，约 400 MB。装好后上课全程离线。"))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -267,9 +288,31 @@ private struct ReadinessRow: View {
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
             Spacer(minLength: 4)
-            Text(ready ? "已就绪" : "待下载")
+            Text(ready ? L("已就绪") : L("待下载"))
                 .font(.system(size: 11))
-                .foregroundStyle(ready ? .secondary : .secondary)
+                .foregroundStyle(.secondary)
         }
     }
+}
+
+/// Forces the first window to a 1200×860 content size (DSH proportions) and
+/// keeps a sensible minimum, regardless of any remembered frame.
+private struct WindowSizer: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            guard let window = view.window else { return }
+            // No window/sheet restoration: a restored sheet would greet the user
+            // with a dialog they never opened.
+            window.isRestorable = false
+            window.minSize = NSSize(width: 1000, height: 680)
+            if window.frame.width < 1100 || window.frame.height < 700 {
+                window.setContentSize(NSSize(width: 1200, height: 860))
+                window.center()
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }

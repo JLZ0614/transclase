@@ -19,33 +19,33 @@ struct ModelManagerView: View {
                 if isLoading {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text("正在检查…").foregroundStyle(.secondary)
+                        Text(L("正在检查…")).foregroundStyle(.secondary)
                     }
                 } else if speechInstalled.isEmpty {
-                    Text("没有已安装的识别模型").foregroundStyle(.secondary)
+                    Text(L("没有已安装的识别模型")).foregroundStyle(.secondary)
                 } else {
                     ForEach(speechInstalled, id: \.self) { id in
                         row(
                             title: LanguageMapping.displayName(forBCP47: id),
-                            badge: id == model.settings.sourceLanguageID ? "当前" : nil
+                            badge: id == model.settings.sourceLanguageID ? L("当前") : nil
                         )
                     }
                 }
             } header: {
                 Text("识别模型 · \(isLoading ? "…" : "\(speechInstalled.count)")")
             } footer: {
-                Text("这些模型由系统统一管理，App 无法单独删除。磁盘紧张时系统会自动清理长期未用的模型。")
+                Text(L("这些模型由系统统一管理，App 无法单独删除。磁盘紧张时系统会自动清理长期未用的模型。"))
             }
 
             Section {
                 if !isLoading {
                     if translationInstalled.isEmpty {
-                        Text("没有已安装的翻译语言包").foregroundStyle(.secondary)
+                        Text(L("没有已安装的翻译语言包")).foregroundStyle(.secondary)
                     } else {
                         ForEach(translationInstalled, id: \.self) { id in
                             row(
                                 title: LanguageMapping.displayName(forBCP47: id),
-                                badge: id == model.settings.targetLanguageID ? "当前" : nil
+                                badge: id == model.settings.targetLanguageID ? L("当前") : nil
                             )
                         }
                     }
@@ -54,7 +54,7 @@ struct ModelManagerView: View {
                 Button {
                     Task { await model.prepareOfflinePack() }
                 } label: {
-                    Label("下载当前语言对", systemImage: "arrow.down.circle")
+                    Label(L("下载当前语言对"), systemImage: "arrow.down.circle")
                 }
                 .disabled(model.isPreparingPack || model.isRunning)
             } header: {
@@ -63,7 +63,7 @@ struct ModelManagerView: View {
                 Text("删除语言包需要在系统里操作：\n• iPhone / iPad：设置 → 翻译 → 已下载的语言\n• Mac：系统设置 → 通用 → 语言与地区 → 翻译语言")
             }
         }
-        .navigationTitle("模型")
+        .navigationTitle(L("模型"))
         .task { await refresh() }
         .refreshable { await refresh() }
     }
@@ -79,7 +79,7 @@ struct ModelManagerView: View {
                     .background(Color.accentColor.opacity(0.15), in: Capsule())
             }
             Spacer(minLength: 4)
-            Text("已安装")
+            Text(L("已安装"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

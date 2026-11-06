@@ -66,7 +66,7 @@ struct CaptionListView: View {
                         }
                         .buttonStyle(.plain)
                         .padding(18)
-                        .accessibilityLabel("回到最新")
+                        .accessibilityLabel(L("回到最新"))
                     }
                 }
             }
@@ -102,7 +102,7 @@ struct CaptionRow: View {
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.mini)
-                    Text("翻译中…")
+                    Text(L("翻译中…"))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }

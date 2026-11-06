@@ -63,7 +63,7 @@ struct LevelBars: View {
         }
         .frame(width: 20, height: height)
         .animation(.easeOut(duration: 0.1), value: level)
-        .accessibilityLabel("麦克风音量")
+        .accessibilityLabel(L("麦克风音量"))
     }
 }
 

@@ -11,11 +11,21 @@ struct ControlDock: View {
 
             LevelBars(level: model.level, height: 13)
 
-            Text(statusLine)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            HStack(spacing: 3) {
+                if let progress = model.speechProgress {
+                    Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
+                } else {
+                    Text(L(model.statusText))
+                    if !model.captions.isEmpty {
+                        Text("·")
+                        Text(String(format: NSLocalizedString("%d 段", comment: ""), model.captions.count))
+                    }
+                }
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
 
             Spacer(minLength: 4)
 
@@ -27,7 +37,7 @@ struct ControlDock: View {
             .buttonStyle(.plain)
             .disabled(model.captions.isEmpty)
             .opacity(model.captions.isEmpty ? 0.35 : 1)
-            .accessibilityLabel("导出逐字稿")
+            .accessibilityLabel(L("导出逐字稿"))
 
             SessionMenu()
         }
@@ -39,15 +49,13 @@ struct ControlDock: View {
         .padding(.bottom, 6)
     }
 
-    private var statusLine: String {
-        if let progress = model.speechProgress {
-            return "下载识别模型 \(Int(progress * 100))%"
+    /// Status is a localised key; the segment counter is a separate, formatted
+    /// string so both can be translated independently.
+    private var statusText: LocalizedStringKey {
+        if model.speechProgress != nil {
+            return LocalizedStringKey(L("下载识别模型 %d%%"))
         }
-        var text = model.statusText
-        if !model.captions.isEmpty {
-            text += " · \(model.captions.count) 段"
-        }
-        return text
+        return LocalizedStringKey(model.statusText)
     }
 }
 
@@ -98,7 +106,7 @@ struct StartStopButton: View {
         }
         .buttonStyle(.plain)
         .disabled(model.isPreparing)
-        .accessibilityLabel(model.isRunning ? "停止" : "开始")
+        .accessibilityLabel(model.isRunning ? L("停止") : L("开始"))
     }
 }
 
@@ -107,12 +115,12 @@ struct LanguageMenu: View {
 
     var body: some View {
         Menu {
-            Picker("识别语言", selection: $model.settings.sourceLanguageID) {
+            Picker(L("识别语言"), selection: $model.settings.sourceLanguageID) {
                 ForEach(model.speechOptions) { option in
                     Text(option.displayName).tag(option.id)
                 }
             }
-            Picker("翻译成", selection: $model.settings.targetLanguageID) {
+            Picker(L("翻译成"), selection: $model.settings.targetLanguageID) {
                 ForEach(model.translationOptions) { option in
                     Text(option.displayName).tag(option.id)
                 }
@@ -137,16 +145,11 @@ struct LanguageMenu: View {
     }
 
     private var shortPair: String {
-        let source = model.settings.sourceLanguageID
-            .split(separator: "-").first.map { String($0).uppercased() } ?? "—"
-        let target = model.settings.targetLanguageID
-        let shortTarget: String
-        if target.hasPrefix("zh") {
-            shortTarget = "中文"
-        } else {
-            shortTarget = target.split(separator: "-").first.map { String($0).uppercased() } ?? "—"
-        }
-        return "\(source) → \(shortTarget)"
+        let source = L10n.locale.localizedString(forIdentifier: model.settings.sourceLanguageID)
+            ?? model.settings.sourceLanguageID
+        let target = L10n.locale.localizedString(forIdentifier: model.settings.targetLanguageID)
+            ?? model.settings.targetLanguageID
+        return "\(source) → \(target)"
     }
 }
 
@@ -158,19 +161,19 @@ struct SessionMenu: View {
             Button {
                 Clipboard.copy(model.plainText)
             } label: {
-                Label("复制全文", systemImage: "doc.on.doc")
+                Label(L("复制全文"), systemImage: "doc.on.doc")
             }
 
             Button {
                 model.exportSourceMarkdown()
             } label: {
-                Label("导出 Markdown 文件（仅原文）", systemImage: "square.and.arrow.down")
+                Label(L("导出 Markdown 文件（仅原文）"), systemImage: "square.and.arrow.down")
             }
 
             Button {
                 Clipboard.copy(model.translationMarkdown)
             } label: {
-                Label("复制为 Markdown", systemImage: "text.badge.checkmark")
+                Label(L("复制为 Markdown"), systemImage: "text.badge.checkmark")
             }
 
             Divider()
@@ -178,7 +181,7 @@ struct SessionMenu: View {
             Button(role: .destructive) {
                 model.requestClear()
             } label: {
-                Label("清空字幕", systemImage: "trash")
+                Label(L("清空字幕"), systemImage: "trash")
             }
         } label: {
             DockIcon(systemName: "ellipsis")
