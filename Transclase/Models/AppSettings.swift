@@ -8,7 +8,7 @@ struct AppSettings: Codable, Equatable {
     var sourceLanguageID: String = "en-US"
     var targetLanguageID: String = "zh-Hans"
     var appLanguage: AppLanguage = .system
-    var appearance: AppAppearance = .dark
+    var appearance: AppAppearance = .system
     var showOriginal: Bool = true
     var fontSize: Double = 24
     var demoMode: Bool = false

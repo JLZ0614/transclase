@@ -4,7 +4,9 @@ import AppKit
 
 extension Color {
     static var appBackground: Color {
-        Color(nsColor: .windowBackgroundColor)
+        // `underPageBackgroundColor` is the soft grey macOS uses behind content;
+        // plain windowBackground reads as glaring white at this window size.
+        Color(nsColor: .underPageBackgroundColor)
     }
 }
 
