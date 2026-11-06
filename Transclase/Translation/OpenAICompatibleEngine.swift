@@ -30,7 +30,7 @@ final class OpenAICompatibleEngine: MTEngine {
     // MARK: - MTEngine
 
     func prepare() async throws {
-        if baseURL.isFileURL { throw MTError.failed("端点地址无效") }
+        if baseURL.isFileURL { throw MTError.failed(L("端点地址无效")) }
         // A cheap reachability probe: better to fall back once at start than to
         // fail on every single sentence.
         _ = try? await request(path: "models", method: "GET", body: nil, timeout: 6)
@@ -63,11 +63,11 @@ final class OpenAICompatibleEngine: MTEngine {
             let message = choices.first?["message"] as? [String: Any],
             let content = message["content"] as? String
         else {
-            throw MTError.failed("返回格式无法解析")
+            throw MTError.failed(L("返回格式无法解析"))
         }
 
         let cleaned = Self.clean(content)
-        guard !cleaned.isEmpty else { throw MTError.failed("模型返回空结果") }
+        guard !cleaned.isEmpty else { throw MTError.failed(L("模型返回空结果")) }
 
         history.append((text, cleaned))
         if history.count > 2 { history.removeFirst(history.count - 2) }
@@ -129,7 +129,7 @@ final class OpenAICompatibleEngine: MTEngine {
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw MTError.failed("没有收到 HTTP 响应")
+            throw MTError.failed(L("没有收到 HTTP 响应"))
         }
         guard (200..<300).contains(http.statusCode) else {
             let snippet = String(data: data.prefix(200), encoding: .utf8) ?? ""
@@ -141,7 +141,7 @@ final class OpenAICompatibleEngine: MTEngine {
     // MARK: - Output hygiene
 
     /// Qwen3 can emit a reasoning block before the answer, and some models
-    /// cheerfully prepend "以下是翻译：".
+    /// cheerfully prepend L("以下是翻译：").
     static func clean(_ raw: String) -> String {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -150,7 +150,7 @@ final class OpenAICompatibleEngine: MTEngine {
             text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        for prefix in ["以下是翻译：", "以下是翻译:", "翻译：", "译文：", "Translation:"] {
+        for prefix in [L("以下是翻译："), L("以下是翻译:"), L("翻译："), L("译文："), "Translation:"] {
             if text.hasPrefix(prefix) {
                 text = String(text.dropFirst(prefix.count))
                     .trimmingCharacters(in: .whitespacesAndNewlines)
