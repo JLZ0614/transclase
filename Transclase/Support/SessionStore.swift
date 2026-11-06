@@ -76,6 +76,52 @@ enum SessionStore {
         }
     }
 
+    /// Parses a session document back into captions and summary blocks so a
+    /// past lecture can be reopened and continued.
+    static func load(_ session: LectureSession) -> (captions: [Caption], summaries: [SummaryBlock]) {
+        let text = read(session)
+        var captions: [Caption] = []
+        var summaries: [SummaryBlock] = []
+
+        let captionPattern = try? NSRegularExpression(
+            pattern: #"\*\*\[(\d{2}:\d{2})\]\*\*\s*\n\s*>\s*([\s\S]*?)\n\s*\n([\s\S]*?)(?=\n\*\*\[|\n## |\z)"#
+        )
+        let ns = text as NSString
+        let full = NSRange(location: 0, length: ns.length)
+        captionPattern?.enumerateMatches(in: text, range: full) { match, _, _ in
+            guard let match else { return }
+            let time = ns.substring(with: match.range(at: 1))
+            let source = ns.substring(with: match.range(at: 2)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let target = ns.substring(with: match.range(at: 3)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let parts = time.split(separator: ":").compactMap { Double($0) }
+            let start = parts.count == 2 ? parts[0] * 60 + parts[1] : 0
+            captions.append(
+                Caption(
+                    id: "\(session.id)-\(captions.count)",
+                    source: source,
+                    target: target.isEmpty ? nil : target,
+                    isFinal: true,
+                    state: target.isEmpty ? .idle : .done,
+                    start: start,
+                    end: start
+                )
+            )
+        }
+
+        let summaryPattern = try? NSRegularExpression(
+            pattern: #"## 要点 ([0-9:–\-]+)\n([\s\S]*?)(?=\n## |\z)"#
+        )
+        summaryPattern?.enumerateMatches(in: text, range: full) { match, _, _ in
+            guard let match else { return }
+            let range = ns.substring(with: match.range(at: 1))
+            let body = ns.substring(with: match.range(at: 2)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !body.isEmpty else { return }
+            summaries.append(SummaryBlock(createdAt: Date(), range: range, markdown: body))
+        }
+
+        return (captions, summaries)
+    }
+
     static func read(_ session: LectureSession) -> String {
         (try? String(contentsOf: session.url, encoding: .utf8)) ?? ""
     }

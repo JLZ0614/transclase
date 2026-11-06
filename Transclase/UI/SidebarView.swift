@@ -63,8 +63,10 @@ struct SidebarView: View {
                             session: session,
                             isCurrent: session.id == model.currentSession?.id
                         )
-                        .onTapGesture { model.openInFinder(session) }
+                        .onTapGesture(count: 2) { model.openInFinder(session) }
+                        .onTapGesture { Task { await model.openSession(session) } }
                         .contextMenu {
+                            Button(L("打开")) { Task { await model.openSession(session) } }
                             Button(L("在访达中显示")) { model.openInFinder(session) }
                         }
                     }

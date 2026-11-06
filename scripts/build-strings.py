@@ -60,6 +60,7 @@ EXTRA = {
     "深色": {"en": "Dark", "es": "Oscuro", "fr": "Sombre", "de": "Dunkel", "ja": "ダーク", "ko": "다크"},
     "刚刚": {"en": "Just now", "es": "Ahora mismo", "fr": "À l'instant",
              "de": "Gerade eben", "ja": "たった今", "ko": "방금"},
+    "打开": {"en": "Open", "es": "Abrir", "fr": "Ouvrir", "de": "Öffnen", "ja": "開く", "ko": "열기"},
 }
 
 keys = json.loads(SRC.read_text()) + list(EXTRA)

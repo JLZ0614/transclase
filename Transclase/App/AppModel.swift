@@ -54,6 +54,7 @@ final class AppModel: ObservableObject {
     private var summaryTask: Task<Void, Never>?
     private var summarizedCaptionCount = 0
     private var persistedFinalCount = 0
+    private var hasTranscriptHeader = false
     private var translationSession: TranslationSession?
 
     init() {
@@ -454,7 +455,8 @@ final class AppModel: ObservableObject {
         let finals = Array(captions.filter(\.isFinal).dropFirst(persistedFinalCount))
         guard !finals.isEmpty else { return }
         persistedFinalCount += finals.count
-        var body = "\n## 逐字稿\n\n"
+        var body = hasTranscriptHeader ? "\n" : "\n## 逐字稿\n\n"
+        hasTranscriptHeader = true
         for caption in finals {
             body += "**[\(SessionExport.timecode(caption.start))]**\n\n> \(caption.source)\n\n"
             if let target = caption.target, !target.isEmpty {
@@ -481,9 +483,29 @@ final class AppModel: ObservableObject {
         chat = []
         summarizedCaptionCount = 0
         persistedFinalCount = 0
+        hasTranscriptHeader = false
         assistantError = nil
         captions.removeAll()
         startedAt = nil
+        refreshSessions()
+    }
+
+    /// Single click in the workspace: load that lecture so it can be reviewed or
+    /// continued. New captions are appended to the same document.
+    func openSession(_ session: LectureSession) async {
+        if isRunning { await stop() }
+        let loaded = SessionStore.load(session)
+        pipeline.clear()
+        captions = loaded.captions
+        summaries = loaded.summaries
+        chat = []
+        currentSession = session
+        summarizedCaptionCount = loaded.captions.count
+        persistedFinalCount = loaded.captions.count
+        hasTranscriptHeader = SessionStore.read(session).contains("## 逐字稿")
+        startedAt = nil
+        assistantError = nil
+        markdownCache = (-1, "")
         refreshSessions()
     }
 
