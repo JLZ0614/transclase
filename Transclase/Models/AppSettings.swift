@@ -8,6 +8,7 @@ struct AppSettings: Codable, Equatable {
     var sourceLanguageID: String = "en-US"
     var targetLanguageID: String = "zh-Hans"
     var appLanguage: AppLanguage = .system
+    var appearance: AppAppearance = .dark
     var showOriginal: Bool = true
     var fontSize: Double = 24
     var demoMode: Bool = false
@@ -35,7 +36,7 @@ struct AppSettings: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case sourceLanguageID, targetLanguageID, showOriginal, fontSize, demoMode, autoScroll
         case translationEngine, localBaseURL, localModel, cloudBaseURL, cloudModel
-        case providers, activeProviderID, appLanguage
+        case providers, activeProviderID, appLanguage, appearance
         case assistantEnabled, summaryIntervalMinutes
     }
 
@@ -54,6 +55,7 @@ struct AppSettings: Codable, Equatable {
         cloudBaseURL = try c.decodeIfPresent(String.self, forKey: .cloudBaseURL) ?? d.cloudBaseURL
         cloudModel = try c.decodeIfPresent(String.self, forKey: .cloudModel) ?? d.cloudModel
         appLanguage = try c.decodeIfPresent(AppLanguage.self, forKey: .appLanguage) ?? d.appLanguage
+        appearance = try c.decodeIfPresent(AppAppearance.self, forKey: .appearance) ?? d.appearance
         providers = try c.decodeIfPresent([ModelProvider].self, forKey: .providers) ?? d.providers
         activeProviderID = try c.decodeIfPresent(UUID.self, forKey: .activeProviderID) ?? d.activeProviderID
         assistantEnabled = try c.decodeIfPresent(Bool.self, forKey: .assistantEnabled) ?? d.assistantEnabled

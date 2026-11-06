@@ -252,6 +252,12 @@ struct SettingsSheet: View {
 
     private var displaySection: some View {
         Section(L("显示")) {
+            Picker(L("外观"), selection: $model.settings.appearance) {
+                ForEach(AppAppearance.allCases) { appearance in
+                    Text(appearance.title).tag(appearance)
+                }
+            }
+            .pickerStyle(.segmented)
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(L("译文字号"))

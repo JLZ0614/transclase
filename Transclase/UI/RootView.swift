@@ -31,6 +31,7 @@ struct RootView: View {
                 .help(L("翻译助手"))
             }
         }
+        .preferredColorScheme(model.settings.appearance.colorScheme)
         .id(model.localizationToken)
         .background(WindowSizer().frame(width: 0, height: 0))
         .background(

@@ -142,3 +142,6 @@
 "已下载的模型" = "Modelos descargados";
 "重启失败，请手动退出后重新打开" = "No se pudo reiniciar: cierra y vuelve a abrir la app.";
 "繁體中文" = "Chino tradicional";
+"外观" = "Apariencia";
+"浅色" = "Claro";
+"深色" = "Oscuro";

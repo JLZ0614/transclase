@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Which translation backend the user picked. All three keep the same
 /// transcription pipeline; only the text-to-text step changes.
@@ -85,6 +86,31 @@ enum AppLanguage: String, Codable, CaseIterable, Identifiable {
             defaults.set(["ja"], forKey: "AppleLanguages")
         case .korean:
             defaults.set(["ko"], forKey: "AppleLanguages")
+        }
+    }
+}
+
+
+/// Interface appearance. The design is dark-first, so it defaults to dark
+/// instead of following a system that may be in light mode.
+enum AppAppearance: String, Codable, CaseIterable, Identifiable {
+    case system, light, dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return L("跟随系统")
+        case .light: return L("浅色")
+        case .dark: return L("深色")
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
         }
     }
 }

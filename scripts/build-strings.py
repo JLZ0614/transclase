@@ -52,6 +52,12 @@ EXTRA = {
         "en": "Traditional Chinese", "es": "Chino tradicional", "fr": "Chinois traditionnel",
         "de": "Traditionelles Chinesisch", "ja": "繁体字中国語", "ko": "중국어 번체",
     },
+    "外观": {
+        "en": "Appearance", "es": "Apariencia", "fr": "Apparence",
+        "de": "Darstellung", "ja": "外観", "ko": "모양",
+    },
+    "浅色": {"en": "Light", "es": "Claro", "fr": "Clair", "de": "Hell", "ja": "ライト", "ko": "라이트"},
+    "深色": {"en": "Dark", "es": "Oscuro", "fr": "Sombre", "de": "Dunkel", "ja": "ダーク", "ko": "다크"},
 }
 
 keys = json.loads(SRC.read_text()) + list(EXTRA)

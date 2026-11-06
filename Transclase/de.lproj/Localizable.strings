@@ -142,3 +142,6 @@
 "已下载的模型" = "Geladene Modelle";
 "重启失败，请手动退出后重新打开" = "Neustart fehlgeschlagen – bitte die App manuell beenden und neu öffnen.";
 "繁體中文" = "Traditionelles Chinesisch";
+"外观" = "Darstellung";
+"浅色" = "Hell";
+"深色" = "Dunkel";
