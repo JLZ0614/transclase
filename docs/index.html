@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transclase 课堂同传 · Mac 上的实时课堂翻译</title>
+<meta name="description" content="在 Mac 上实时把外语课堂变成中英双语字幕。声音不出本机，课程自动存档，配 AI 助手整理要点。">
+<meta property="og:title" content="Transclase 课堂同传">
+<meta property="og:description" content="实时双语字幕 · 完全离线 · AI 要点总结">
+<meta property="og:image" content="img/shot-captions.png">
+<link rel="icon" href="img/icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="">Transclase</a>
+    <div class="links">
+      <a href="#features">功能</a>
+      <a href="#engines">翻译引擎</a>
+      <a href="#install">下载</a>
+      <a href="#faq">常见问题</a>
+      <a href="https://github.com/JLZ0614/transclase" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap" id="top">
+  <img class="icon" src="img/icon.png" alt="Transclase 图标">
+  <h1>让外语课堂<br>变成你的母语</h1>
+  <p class="lede">
+    Transclase 在 Mac 上实时生成<b>双语字幕</b>：讲师说外语，你看到原文和中文。
+    <b>声音不出本机</b>，每节课自动存档，还有 AI 帮你总结重点。
+  </p>
+
+  <div class="cta">
+    <a class="btn btn-primary" href="#install">立即下载</a>
+    <a class="btn btn-ghost" href="https://github.com/JLZ0614/transclase" target="_blank" rel="noopener">查看源码</a>
+  </div>
+  <p class="meta">macOS 26+ · Apple Silicon · 免费开源（MIT）</p>
+
+  <div class="hero-shot">
+    <img src="img/shot-captions.png" alt="Transclase 实时双语字幕界面">
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2>为“听不懂”设计的六件事</h2>
+    <p class="section-lede">不是又一个翻译 App，而是把一节课从头到尾都照顾到。</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="ico">◉</div>
+        <h3>实时双语字幕</h3>
+        <p>原文小字、译文大字，同屏对照。字号可调，也能只留译文。</p>
+      </div>
+      <div class="card">
+        <div class="ico">↵</div>
+        <h3>整句翻译</h3>
+        <p>识别碎片先攒成完整句子再翻，避免“断头句”。遇到句号或停顿才输出。</p>
+      </div>
+      <div class="card">
+        <div class="ico">⌘</div>
+        <h3>三种翻译引擎</h3>
+        <p>系统离线、本地 Qwen3、云端 API，随时切换。任意一个挂了会自动回退。</p>
+      </div>
+      <div class="card">
+        <div class="ico">✳</div>
+        <h3>AI 要点助手</h3>
+        <p>上课时每 1–10 分钟自动总结，也能一键总结或直接提问。</p>
+      </div>
+      <div class="card">
+        <div class="ico">▤</div>
+        <h3>课程自动存档</h3>
+        <p>每节课一个 Markdown，逐字稿与要点都在里面。单击回看，双击定位文件。</p>
+      </div>
+      <div class="card">
+        <div class="ico">⚿</div>
+        <h3>七种界面语言</h3>
+        <p>中英西法德日韩，切换立即生效。语言名也跟随界面语言。</p>
+      </div>
+    </div>
+
+    <figure class="shot">
+      <img src="img/shot-assistant.jpg" alt="翻译助手与要点卡片">
+      <figcaption>右侧是翻译助手：按时间段给出要点，逐字稿与原文同步留存。</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="engines">
+  <div class="wrap">
+    <h2>三种引擎，自己选</h2>
+    <p class="section-lede">
+      默认用 Apple 的系统离线翻译——最快、零配置。对质量有要求，可以换成云端大模型；想守住隐私，就用本地 Qwen3。
+    </p>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>引擎</th><th>速度</th><th>质量</th><th>联网</th><th>上下文</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>系统离线翻译</td><td>最快 · 约 0.3 秒/句</td><td>中等</td><td class="yes">不需要</td><td class="no">—</td></tr>
+          <tr><td>本地 Qwen3</td><td>较慢 · 1.5–3 秒/句</td><td>中上</td><td class="yes">不需要</td><td class="yes">前两句</td></tr>
+          <tr><td>云端 API</td><td>中等 · 0.8–2 秒/句</td><td>最好</td><td class="no">需要</td><td class="yes">前两句</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>下载与安装</h2>
+    <p class="section-lede">
+      需要 macOS 26 或更高、Apple Silicon 芯片。首次运行会下载约 400 MB 的语音模型，之后上课全程离线。
+    </p>
+
+    <div class="install-grid">
+      <div>
+        <h3 style="font-size:15px;margin:0 0 10px;color:var(--muted)">一行命令（推荐）</h3>
+        <pre><code>curl -fsSL https://raw.githubusercontent.com/JLZ0614/transclase/main/scripts/install.sh | bash</code></pre>
+        <p class="meta">脚本会下载最新版、放进「应用程序」并去掉隔离标记。</p>
+      </div>
+      <div>
+        <h3 style="font-size:15px;margin:0 0 10px;color:var(--muted)">Homebrew</h3>
+        <pre><code>brew install --cask JLZ0614/transclase/transclase</code></pre>
+        <p class="meta">已装过的话用 <code>brew upgrade --cask transclase</code>。</p>
+      </div>
+    </div>
+
+    <p class="meta" style="margin-top:24px">
+      也可以到 <a href="https://github.com/JLZ0614/transclase/releases/latest" target="_blank" rel="noopener" style="color:var(--accent)">Release 页面</a> 手动下载 zip。
+      App 未做公证，若被 Gatekeeper 拦下，请到「系统设置 → 隐私与安全性 → 仍要打开」。
+    </p>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>常见问题</h2>
+
+    <details open>
+      <summary>声音会上传到服务器吗？</summary>
+      <p>不会。语音识别全程在本机完成，音频只在内存里处理。只有当你主动把翻译引擎设为「云端 API」或使用 AI 助手时，识别出的<strong>文字</strong>才会发送到你配置的服务商。</p>
+    </details>
+
+    <details>
+      <summary>为什么首次打开要下载几百 MB？</summary>
+      <p>Apple 的识别模型和翻译语言包是按需下载的，不是系统预装。下载一次之后，上课可以完全离线。</p>
+    </details>
+
+    <details>
+      <summary>macOS 提示“无法验证开发者”怎么办？</summary>
+      <p>App 没有 Apple 开发者证书，因此无法通过 Gatekeeper。用上面的 curl 命令安装可以绕开隔离标记；如果已经下载了 zip，请在「系统设置 → 隐私与安全性」里点「仍要打开」。</p>
+    </details>
+
+    <details>
+      <summary>支持 Windows 吗？</summary>
+      <p>不支持。App 建立在 Apple 的语音识别与翻译框架之上，这些框架只有 macOS 才有。Windows 版本需要完全不同的技术栈。</p>
+    </details>
+
+    <details>
+      <summary>能录下课堂音频吗？</summary>
+      <p>不能。App 只保存文字（逐字稿与要点），不保存录音。请在上课前确认所在学校与当地法律对课堂记录的要求。</p>
+    </details>
+
+    <details>
+      <summary>AI 助手需要单独付费吗？</summary>
+      <p>助手走你自己的云端 API Key，费用直接结算给服务商。一节两小时的课通常在几毛钱以内。</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Transclase</span>
+    <span>·</span>
+    <a href="https://github.com/JLZ0614/transclase" target="_blank" rel="noopener">GitHub</a>
+    <span>·</span>
+    <a href="https://github.com/JLZ0614/transclase/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    <span style="margin-left:auto">macOS 26+ · Apple Silicon</span>
+  </div>
+</footer>
+
+</body>
+</html>
