@@ -20,3 +20,8 @@ dist/
 
 # local cask staging
 .tap/
+
+# new-api deployment secrets
+deploy/new-api/.env
+deploy/new-api/data/
+deploy/new-api/logs/

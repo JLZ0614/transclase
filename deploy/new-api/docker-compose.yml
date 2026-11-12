@@ -1,0 +1,41 @@
+services:
+  new-api:
+    image: calciumion/new-api:latest
+    container_name: transclase-api
+    restart: unless-stopped
+    command: --log-dir /app/logs
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - SESSION_SECRET=${SESSION_SECRET}
+    expose:
+      - "3000"
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: transclase-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN}
+    depends_on:
+      - new-api
+    networks:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:
