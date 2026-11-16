@@ -103,17 +103,6 @@ struct SettingsSheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            if model.settings.translationEngine == .localQwen {
-                TextField(L("地址"), text: $model.settings.localBaseURL)
-                    .textFieldStyle(.roundedBorder)
-                    .disabled(model.isRunning)
-                TextField(L("模型名"), text: $model.settings.localModel)
-                    .textFieldStyle(.roundedBorder)
-                    .disabled(model.isRunning)
-                Text(L("先跑起来：ollama pull qwen3.5:2b 然后 ollama serve。"))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
 
             if model.settings.translationEngine != .apple {
                 Button {

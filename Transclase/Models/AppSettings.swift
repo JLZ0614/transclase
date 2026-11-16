@@ -16,8 +16,6 @@ struct AppSettings: Codable, Equatable {
 
     // Translation backend
     var translationEngine: TranslationEngineKind = .apple
-    var localBaseURL: String = "http://127.0.0.1:11434/v1"
-    var localModel: String = "qwen3:4b"
     var cloudBaseURL: String = "https://api.deepseek.com/v1"
     var cloudModel: String = "deepseek-chat"
 
@@ -35,7 +33,7 @@ struct AppSettings: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case sourceLanguageID, targetLanguageID, showOriginal, fontSize, demoMode, autoScroll
-        case translationEngine, localBaseURL, localModel, cloudBaseURL, cloudModel
+        case translationEngine, cloudBaseURL, cloudModel
         case providers, activeProviderID, appLanguage, appearance
         case assistantEnabled, summaryIntervalMinutes
     }
@@ -49,9 +47,10 @@ struct AppSettings: Codable, Equatable {
         fontSize = try c.decodeIfPresent(Double.self, forKey: .fontSize) ?? d.fontSize
         demoMode = try c.decodeIfPresent(Bool.self, forKey: .demoMode) ?? d.demoMode
         autoScroll = try c.decodeIfPresent(Bool.self, forKey: .autoScroll) ?? d.autoScroll
-        translationEngine = try c.decodeIfPresent(TranslationEngineKind.self, forKey: .translationEngine) ?? d.translationEngine
-        localBaseURL = try c.decodeIfPresent(String.self, forKey: .localBaseURL) ?? d.localBaseURL
-        localModel = try c.decodeIfPresent(String.self, forKey: .localModel) ?? d.localModel
+        // Unknown / removed engines (e.g. the old local Qwen3) fall back to the
+        // system translator instead of failing the whole settings decode.
+        let rawEngine = try c.decodeIfPresent(String.self, forKey: .translationEngine)
+        translationEngine = rawEngine.flatMap(TranslationEngineKind.init(rawValue:)) ?? d.translationEngine
         cloudBaseURL = try c.decodeIfPresent(String.self, forKey: .cloudBaseURL) ?? d.cloudBaseURL
         cloudModel = try c.decodeIfPresent(String.self, forKey: .cloudModel) ?? d.cloudModel
         appLanguage = try c.decodeIfPresent(AppLanguage.self, forKey: .appLanguage) ?? d.appLanguage

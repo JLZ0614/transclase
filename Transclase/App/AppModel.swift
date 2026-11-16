@@ -254,10 +254,9 @@ final class AppModel: ObservableObject {
         defer { isTestingEngine = false }
 
         let s = settings
-        let isCloud = s.translationEngine == .cloud
         let provider = activeProvider
-        let urlString = isCloud ? (provider?.baseURL ?? "") : s.localBaseURL
-        let model = isCloud ? (provider?.model ?? "") : s.localModel
+        let urlString = provider?.baseURL ?? ""
+        let model = provider?.model ?? ""
         guard let url = URL(string: urlString) else {
             engineTestResult = L("地址无效")
             return
@@ -266,7 +265,7 @@ final class AppModel: ObservableObject {
         let engine = OpenAICompatibleEngine(
             baseURL: url,
             model: model,
-            apiKey: isCloud ? provider.flatMap { providerKey($0) } : nil,
+            apiKey: provider.flatMap { providerKey($0) },
             sourceName: LanguageMapping.displayName(forBCP47: s.sourceLanguageID),
             targetName: LanguageMapping.promptName(for: s.targetLanguageID)
         )

@@ -90,13 +90,12 @@ final class CaptionPipeline {
                     onError: onError
                 )
 
-            case .localQwen, .cloud:
-                let isCloud = settings.translationEngine == .cloud
+            case .cloud:
                 let provider = settings.providers.first { $0.id == settings.activeProviderID } ?? settings.providers.first
-                let urlString = isCloud ? (provider?.baseURL ?? "") : settings.localBaseURL
-                let model = isCloud ? (provider?.model ?? "") : settings.localModel
-                let key = isCloud ? provider.flatMap { CredentialStore.load("provider.\($0.id.uuidString)") } : nil
-                let label = isCloud ? "云端 · \(model)" : "本地 · \(model)"
+                let urlString = provider?.baseURL ?? ""
+                let model = provider?.model ?? ""
+                let key = provider.flatMap { CredentialStore.load("provider.\($0.id.uuidString)") }
+                let label = "云端 · \(model)"
 
                 if let url = URL(string: urlString) {
                     let candidate = OpenAICompatibleEngine(

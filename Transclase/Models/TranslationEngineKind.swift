@@ -6,8 +6,6 @@ import SwiftUI
 enum TranslationEngineKind: String, Codable, CaseIterable, Identifiable {
     /// Apple's on-device translation framework. Fastest, needs language packs.
     case apple
-    /// Qwen3 running locally (Ollama / LM Studio, OpenAI-compatible endpoint).
-    case localQwen
     /// Any OpenAI-compatible cloud endpoint.
     case cloud
 
@@ -16,7 +14,6 @@ enum TranslationEngineKind: String, Codable, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .apple: return L("系统离线翻译")
-        case .localQwen: return L("本地 Qwen3")
         case .cloud: return L("云端 API")
         }
     }
@@ -25,8 +22,6 @@ enum TranslationEngineKind: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .apple:
             return L("最快，完全离线，需要下载语言包")
-        case .localQwen:
-            return L("离线，可注入上下文，需要先在本机跑起模型")
         case .cloud:
             return L("质量最好，需要联网和自己填 API Key")
         }
