@@ -33,6 +33,19 @@ struct CaptionListView: View {
                         proxy.scrollTo(bottomID, anchor: .bottom)
                     }
                 }
+                .mask(alignment: .top) {
+                    // Fade the first visible line out under the title bar instead
+                    // of letting it collide with the toolbar.
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black.opacity(0.55), location: 0.035),
+                            .init(color: .black, location: 0.06),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
                 .onScrollPhaseChange { _, newPhase in
                     userIsScrolling = (newPhase == .interacting || newPhase == .tracking)
                 }

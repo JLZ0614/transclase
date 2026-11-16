@@ -10,7 +10,7 @@ struct AppSettings: Codable, Equatable {
     var appLanguage: AppLanguage = .system
     var appearance: AppAppearance = .system
     var showOriginal: Bool = true
-    var fontSize: Double = 24
+    var fontSize: Double = 16
     var demoMode: Bool = false
     var autoScroll: Bool = true
 
