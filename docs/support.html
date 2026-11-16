@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>支持 · Transclase 课堂同传</title>
+<meta name="description" content="Transclase 的帮助与联系渠道：安装问题、语言包、API 配置、常见故障排查。">
+<link rel="icon" href="img/icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/icon.png" alt="">Transclase</a>
+    <div class="links">
+      <a href="index.html">首页</a>
+      <a href="privacy.html">隐私</a>
+      <a href="https://github.com/JLZ0614/transclase" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap" style="padding-top:56px;padding-bottom:64px;max-width:820px">
+  <h1 style="font-size:clamp(28px,4vw,40px)">支持</h1>
+  <p class="meta">遇到问题先看这里，大多数情况可以在两分钟内解决。</p>
+
+  <section style="padding:36px 0 0">
+    <h2 style="font-size:20px">联系我们</h2>
+    <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:16px">
+      <div class="card">
+        <div class="ico">✉</div>
+        <h3>邮件</h3>
+        <p><a href="mailto:support@example.com" style="color:var(--accent)">support@example.com</a><br>通常 1–2 个工作日内回复</p>
+      </div>
+      <div class="card">
+        <div class="ico">◈</div>
+        <h3>GitHub Issues</h3>
+        <p><a href="https://github.com/JLZ0614/transclase/issues" target="_blank" rel="noopener" style="color:var(--accent)">提交问题</a><br>可以附上截图与系统版本</p>
+      </div>
+    </div>
+    <p class="meta" style="margin-top:10px">⚠️ 发布前请把邮箱替换成你的真实地址。</p>
+  </section>
+
+  <section style="padding:40px 0 0">
+    <h2 style="font-size:20px">安装</h2>
+    <p style="color:var(--muted)">推荐用一行命令，会自动放入「应用程序」并去掉隔离标记：</p>
+    <pre><code>curl -fsSL https://raw.githubusercontent.com/JLZ0614/transclase/main/scripts/install.sh | bash</code></pre>
+    <p style="color:var(--muted)">或使用 Homebrew：</p>
+    <pre><code>brew install --cask JLZ0614/transclase/transclase</code></pre>
+  </section>
+
+  <section style="padding:40px 0 0">
+    <h2 style="font-size:20px">常见故障</h2>
+
+    <details open>
+      <summary>提示「无法验证开发者」或「已损坏」</summary>
+      <p>App 未经过 Apple 公证。右键打开在 macOS 15 之后已经失效，请到
+        「系统设置 → 隐私与安全性」，在页面下方点「仍要打开」。
+        或者直接用上面的 curl 命令安装，脚本会清除隔离标记。</p>
+    </details>
+
+    <details>
+      <summary>首次打开要下载几百 MB</summary>
+      <p>Apple 的语音识别模型和翻译语言包是按需下载的，不是系统预装。
+        在首页点击「开始听课」后会提示下载，完成后上课全程离线。</p>
+    </details>
+
+    <details>
+      <summary>翻译没有出现，只显示原文</summary>
+      <p>说明离线语言包还没装好。到「设置 → 翻译」点「下载 / 刷新离线语言包」，
+        在系统面板里确认下载完成。也可以在设置里改用「云端 API」。</p>
+    </details>
+
+    <details>
+      <summary>云端翻译或 AI 助手报错</summary>
+      <p>检查三件事：地址是否以 <code>/v1</code> 结尾、模型名是否和你的服务商一致、
+        API Key 是否有效。设置里有「测试连接」按钮，会真的翻一句并显示耗时。</p>
+    </details>
+
+    <details>
+      <summary>AI 助手说「没有可总结的内容」</summary>
+      <p>助手只总结已经识别出的字幕。请先开始一节课并让它跑一小段，再点「总结」。</p>
+    </details>
+
+    <details>
+      <summary>录音没有反应</summary>
+      <p>到「系统设置 → 隐私与安全性 → 麦克风」确认 Transclase 已勾选；
+        同时检查输入设备是否选对（外接麦克风/耳机）。</p>
+    </details>
+
+    <details>
+      <summary>换了电脑，以前的课程记录还在吗</summary>
+      <p>课程记录保存在本机 App 沙盒里，不随账号同步。卸载 App 会一并删除，
+        建议定期用「导出」功能保存 Markdown。</p>
+    </details>
+  </section>
+
+  <section style="padding:40px 0 0">
+    <h2 style="font-size:20px">反馈问题时请附上</h2>
+    <ul style="color:var(--muted);line-height:1.9">
+      <li>macOS 版本（关于本机 → 版本号）</li>
+      <li>芯片型号（Apple Silicon / Intel）</li>
+      <li>设置里显示的翻译引擎与「测试连接」的结果</li>
+      <li>出问题时的截图（不要包含密钥）</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Transclase</span>
+    <span>·</span>
+    <a href="index.html">首页</a>
+    <span>·</span>
+    <a href="privacy.html">隐私政策</a>
+    <span>·</span>
+    <a href="https://github.com/JLZ0614/transclase/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+  </div>
+</footer>
+
+</body>
+</html>
