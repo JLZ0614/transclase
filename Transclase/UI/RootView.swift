@@ -113,8 +113,7 @@ struct RootView: View {
         HStack(spacing: 0) {
             if showSidebar {
                 SidebarView(showSettings: $showSettings)
-                    .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 300)
-                    .frame(minWidth: 200, idealWidth: 240, maxWidth: 300)
+                    .frame(width: 260)
                 Divider()
             }
 
@@ -191,71 +190,92 @@ struct EmptyStateView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        ContentUnavailableView {
-            Label(L("点「新对话」开始一节课"), systemImage: "waveform")
-        } description: {
-            VStack(spacing: 18) {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "waveform")
+                .font(.system(size: 38, weight: .light))
+                .foregroundStyle(.tint)
+                .frame(width: 88, height: 88)
+                .glassEffect(.regular, in: .circle)
+
+            VStack(spacing: 7) {
+                Text(L("点「新对话」开始一节课"))
+                    .font(.title3.weight(.semibold))
                 Text(L("或者直接点下面的麦克风。声音只在本机处理。"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 340)
+            }
 
-                if model.settings.demoMode {
-                    Label(L("演示模式：会播放一段模拟讲座"), systemImage: "play.rectangle")
-                } else if model.isBootstrapping {
-                    ProgressView(L("正在检查本机语言能力…"))
-                        .controlSize(.small)
-                } else if model.speechOptions.isEmpty {
-                    Label(L("这台设备没有可用的系统语音识别，可以先试试演示模式"),
-                          systemImage: "exclamationmark.circle")
-                } else {
-                    readinessCard
-                }
+            if model.settings.demoMode {
+                Label(L("演示模式：会播放一段模拟讲座"), systemImage: "play.rectangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if model.isBootstrapping {
+                ProgressView(L("正在检查本机语言能力…"))
+                    .font(.caption)
+            } else if model.speechOptions.isEmpty {
+                Label(L("这台设备没有可用的系统语音识别，可以先试试演示模式"), systemImage: "exclamationmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                readinessCard
             }
-            .font(.callout)
-        } actions: {
-            Button {
-                Task {
-                    if model.currentSession == nil { await model.newConversation() }
-                    await model.start()
-                }
-            } label: {
-                Label(L("开始听课"), systemImage: "mic.fill")
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
 
-            Button {
-                Task { await model.playDemo() }
-            } label: {
-                Text(L("看演示"))
+            HStack(spacing: 12) {
+                Button {
+                    Task {
+                        if model.currentSession == nil { await model.newConversation() }
+                        await model.start()
+                    }
+                } label: {
+                    Label(L("开始听课"), systemImage: "mic.fill")
+                        .padding(.horizontal, 6)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+
+                Button {
+                    Task { await model.playDemo() }
+                } label: {
+                    Text(L("看演示")).padding(.horizontal, 6)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+
+            Spacer()
         }
+        .padding(28)
     }
 
     private var readinessCard: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 8) {
-                ReadinessRow(title: L("识别模型"), detail: model.sourceName, ready: model.isSpeechModelInstalled)
-                ReadinessRow(title: L("翻译语言包"), detail: model.pairLabel, ready: model.isTranslationPackInstalled)
+        VStack(alignment: .leading, spacing: 9) {
+            ReadinessRow(title: L("识别模型"), detail: model.sourceName, ready: model.isSpeechModelInstalled)
+            ReadinessRow(title: L("翻译语言包"), detail: model.pairLabel, ready: model.isTranslationPackInstalled)
 
-                if let progress = model.speechProgress {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ProgressView(value: progress)
-                        Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, 2)
-                } else if !model.isReadyOffline {
-                    Text(L("首次使用需要联网下载一次，约 400 MB。装好后上课全程离线。"))
-                        .font(.caption)
+            if let progress = model.speechProgress {
+                VStack(alignment: .leading, spacing: 3) {
+                    ProgressView(value: progress).progressViewStyle(.linear)
+                    Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.top, 2)
+            } else if !model.isReadyOffline {
+                Text(L("首次使用需要联网下载一次，约 400 MB。装好后上课全程离线。"))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .frame(maxWidth: 380)
+        .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 }
 
