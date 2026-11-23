@@ -14,7 +14,7 @@ struct LectureSession: Identifiable, Hashable {
 enum SessionStore {
     static var directory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser
+            ?? URL(fileURLWithPath: NSHomeDirectory())
         return base.appendingPathComponent("Transclase/Sessions", isDirectory: true)
     }
 

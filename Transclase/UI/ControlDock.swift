@@ -4,28 +4,36 @@ import SwiftUI
 /// deliberately thin so it never eats caption space.
 struct ControlDock: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// On a phone the dock only has room for the essentials.
+    private var isCompact: Bool { sizeClass == .compact }
 
     var body: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: isCompact ? 7 : 9) {
             LanguageMenu()
 
-            LevelBars(level: model.level, height: 13)
-
-            HStack(spacing: 3) {
-                if let progress = model.speechProgress {
-                    Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
-                } else {
-                    Text(L(model.statusText))
-                    if !model.captions.isEmpty {
-                        Text("·")
-                        Text(String(format: NSLocalizedString("%d 段", comment: ""), model.captions.count))
-                    }
-                }
+            if !isCompact {
+                LevelBars(level: model.level, height: 13)
             }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .truncationMode(.tail)
+
+            if !isCompact {
+                HStack(spacing: 3) {
+                    if let progress = model.speechProgress {
+                        Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
+                    } else {
+                        Text(L(model.statusText))
+                        if !model.captions.isEmpty {
+                            Text("·")
+                            Text(String(format: NSLocalizedString("%d 段", comment: ""), model.captions.count))
+                        }
+                    }
+            }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            }
 
             Spacer(minLength: 4)
 

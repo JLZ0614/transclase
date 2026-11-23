@@ -6,8 +6,63 @@ struct RootView: View {
     @State private var showSettings = false
     @State private var showAssistant = false
     @State private var showSidebar = true
+    @State private var showSessions = false
 
     var body: some View {
+        #if os(iOS)
+        phoneBody
+        #else
+        desktopBody
+        #endif
+    }
+
+    #if os(iOS)
+    /// iPhone: a single column with the workspace, assistant and settings behind
+    /// sheets, because three panes do not fit.
+    private var phoneBody: some View {
+        NavigationStack {
+            ZStack {
+                AppBackdrop()
+                mainColumn
+            }
+            .navigationTitle(model.currentSession?.displayName ?? "Transclase")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(L("工作区")) { showSessions = true }
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button { showAssistant = true } label: { Image(systemName: "sparkles") }
+                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                }
+            }
+            .preferredColorScheme(model.settings.appearance.colorScheme)
+            .id(model.localizationToken)
+            .translationTask(model.translationConfiguration) { session in
+                model.adoptTranslationSession(session)
+            }
+            .task { await bootstrapOnce() }
+            .sheet(isPresented: $showSessions) {
+                NavigationStack {
+                    SidebarView(showSettings: $showSettings)
+                        .toolbar { ToolbarItem(placement: .topBarTrailing) {
+                            Button(L("完成")) { showSessions = false }
+                        } }
+                }
+                .environmentObject(model)
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showAssistant) {
+                NavigationStack { AssistantPanel() }
+                    .environmentObject(model)
+            }
+            .sheet(isPresented: $showSettings) { SettingsSheet().environmentObject(model) }
+        }
+    }
+    #endif
+
+    #if os(macOS)
+    private var desktopBody: some View {
         ZStack {
             AppBackdrop()
             content
@@ -34,6 +89,7 @@ struct RootView: View {
         }
         .preferredColorScheme(model.settings.appearance.colorScheme)
         .id(model.localizationToken)
+        #if os(macOS)
         .background(WindowSizer().frame(width: 0, height: 0))
         .background(
             GeometryReader { geo in
@@ -42,26 +98,21 @@ struct RootView: View {
                     .onChange(of: geo.size) { _, newValue in model.windowSize = newValue }
             }
         )
+        #endif
         .navigationTitle("")
         .animation(.snappy(duration: 0.25), value: model.errorMessage)
         .translationTask(model.translationConfiguration) { session in
             model.adoptTranslationSession(session)
         }
-        .task {
-            await model.bootstrap()
-            model.refreshSessions()
-            if AppModel.wantsSelfTest {
-                await model.runSelfTest()
-            } else if AppModel.wantsDemo, model.captions.isEmpty {
-                await model.start()
-            }
-        }
+        .task { await bootstrapOnce() }
+        #if os(macOS)
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in
             model.isFullScreen = true
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in
             model.isFullScreen = false
         }
+        #endif
         .onChange(of: model.settings.sourceLanguageID) { _, _ in
             model.syncTranslationConfiguration()
         }
@@ -109,6 +160,8 @@ struct RootView: View {
         }
     }
 
+    #endif
+
     private var content: some View {
         HStack(spacing: 0) {
             if showSidebar {
@@ -152,6 +205,16 @@ struct RootView: View {
         .frame(maxWidth: .infinity)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ControlDock()
+        }
+    }
+
+    private func bootstrapOnce() async {
+        await model.bootstrap()
+        model.refreshSessions()
+        if AppModel.wantsSelfTest {
+            await model.runSelfTest()
+        } else if AppModel.wantsDemo, model.captions.isEmpty {
+            await model.start()
         }
     }
 }
@@ -305,6 +368,7 @@ private struct ReadinessRow: View {
 
 /// Forces the first window to a 1200×860 content size (DSH proportions) and
 /// keeps a sensible minimum, regardless of any remembered frame.
+#if os(macOS)
 private struct WindowSizer: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
@@ -351,3 +415,4 @@ private struct WindowSizer: NSViewRepresentable {
         var observers: [NSObjectProtocol] = []
     }
 }
+#endif

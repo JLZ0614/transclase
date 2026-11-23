@@ -1,4 +1,8 @@
+#if os(macOS)
 import AppKit
+#else
+import UIKit
+#endif
 import Combine
 import Foundation
 import Speech
@@ -144,6 +148,13 @@ final class AppModel: ObservableObject {
     }
 
     func syncTranslationConfiguration(force: Bool = false) {
+        #if targetEnvironment(simulator)
+        // Apple's Translation framework reports "not supported on simulator";
+        // asking for a session there only produces a blocking system alert.
+        translationConfiguration = nil
+        return
+        #endif
+
         guard !isDemoActive else {
             translationConfiguration = nil
             return
@@ -432,6 +443,7 @@ final class AppModel: ObservableObject {
     }
 
     func relaunch() {
+        #if os(macOS)
         let url = Bundle.main.bundleURL
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
@@ -444,6 +456,7 @@ final class AppModel: ObservableObject {
                 NSApp.terminate(nil)
             }
         }
+        #endif
     }
 
     // MARK: - Sessions
@@ -509,7 +522,9 @@ final class AppModel: ObservableObject {
     }
 
     func openInFinder(_ session: LectureSession) {
+        #if os(macOS)
         NSWorkspace.shared.activateFileViewerSelecting([session.url])
+        #endif
     }
 
     // MARK: - Assistant

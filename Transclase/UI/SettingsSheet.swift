@@ -43,7 +43,9 @@ struct SettingsSheet: View {
                 }
             }
         }
+        #if os(macOS)
         .frame(width: sheetSize.width, height: sheetSize.height)
+        #endif
         .onAppear {
             if model.settings.activeProviderID == nil {
                 model.settings.activeProviderID = model.settings.providers.first?.id

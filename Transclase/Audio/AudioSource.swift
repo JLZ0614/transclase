@@ -43,6 +43,14 @@ final class MicrophoneSource: AudioSource {
     func start() async throws -> AsyncStream<AVAudioPCMBuffer> {
         try await Self.requestPermission()
 
+        #if os(iOS)
+        // iOS needs an explicit session; without it the engine produces silence
+        // and the mic indicator never appears.
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetooth, .defaultToSpeaker])
+        try session.setActive(true, options: [])
+        #endif
+
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
