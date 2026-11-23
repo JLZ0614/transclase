@@ -361,6 +361,7 @@ final class AppModel: ObservableObject {
                 sessionProvider: { [weak self] in self?.translationSession }
             )
             isRunning = true
+            setScreenAwake(true)
             startedAt = Date()
             if currentSession == nil { currentSession = SessionStore.create() }
             refreshSessions()
@@ -370,6 +371,7 @@ final class AppModel: ObservableObject {
             errorMessage = error.localizedDescription
             statusText = L("启动失败")
             isRunning = false
+            setScreenAwake(false)
         }
     }
 
@@ -377,6 +379,7 @@ final class AppModel: ObservableObject {
         guard isRunning else { return }
         await pipeline.stop()
         isRunning = false
+        setScreenAwake(false)
         level = 0
         transientDemo = false
         stopSummaryTimer()
@@ -440,6 +443,14 @@ final class AppModel: ObservableObject {
         localizationToken = UUID()
         // The menu bar only matches after a relaunch, whatever the target is.
         menusNeedRelaunch = language != launchLanguage
+    }
+
+    /// Keeps the screen on while a lecture is being captured; a locked phone
+    /// would suspend the app and end the session.
+    private func setScreenAwake(_ awake: Bool) {
+        #if os(iOS)
+        UIApplication.shared.isIdleTimerDisabled = awake
+        #endif
     }
 
     func relaunch() {

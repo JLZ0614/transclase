@@ -36,6 +36,12 @@ final class MicrophoneSource: AudioSource {
     private var tapInstalled = false
     var onLevel: (@Sendable (Float) -> Void)?
 
+    #if os(iOS)
+    /// Keeps recording alive when the system interrupts the session (a call,
+    /// Siri, another app grabbing the mic).
+    private var interruptionObserver: NSObjectProtocol?
+    #endif
+
     var format: AVAudioFormat {
         engine.inputNode.outputFormat(forBus: 0)
     }
@@ -71,6 +77,10 @@ final class MicrophoneSource: AudioSource {
         }
         tapInstalled = true
 
+        #if os(iOS)
+        registerInterruptionHandler()
+        #endif
+
         engine.prepare()
         do {
             try engine.start()
@@ -87,6 +97,13 @@ final class MicrophoneSource: AudioSource {
     }
 
     func stop() {
+        #if os(iOS)
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+            self.interruptionObserver = nil
+        }
+        #endif
+
         if tapInstalled {
             engine.inputNode.removeTap(onBus: 0)
             tapInstalled = false
@@ -154,6 +171,36 @@ final class MicrophoneSource: AudioSource {
         let db = 10 * log10(max(mean, 1e-7))
         return min(max((db + 50) / 50, 0), 1)
     }
+    #if os(iOS)
+    private func registerInterruptionHandler() {
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] note in
+            guard let self,
+                  let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: raw)
+            else { return }
+
+            switch type {
+            case .began:
+                // The system already paused the engine; nothing to stop manually.
+                break
+            case .ended:
+                let options = (note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt)
+                    .map(AVAudioSession.InterruptionOptions.init(rawValue:)) ?? []
+                guard options.contains(.shouldResume) else { return }
+                try? AVAudioSession.sharedInstance().setActive(true, options: [])
+                if !self.engine.isRunning {
+                    try? self.engine.start()
+                }
+            @unknown default:
+                break
+            }
+        }
+    }
+    #endif
 }
 
 /// Converts microphone buffers into whatever format the transcription model
