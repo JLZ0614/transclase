@@ -22,7 +22,7 @@ struct ControlDock: View {
                     }
                 }
             }
-            .font(.caption2)
+            .font(.caption)
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .truncationMode(.tail)

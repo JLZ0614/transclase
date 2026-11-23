@@ -64,7 +64,7 @@ struct AssistantPanel: View {
     private var header: some View {
         return HStack(spacing: 8) {
             Text(L("翻译助手"))
-                .font(.system(size: 12, weight: .semibold))
+                .font(.headline)
             Spacer()
             Menu {
                 Picker(L("总结间隔"), selection: $model.settings.summaryIntervalMinutes) {
@@ -87,7 +87,7 @@ struct AssistantPanel: View {
                 if model.assistantBusy {
                     ProgressView().controlSize(.mini)
                 } else {
-                    Text(L("总结")).font(.system(size: 11, weight: .medium))
+                    Text(L("总结")).font(.subheadline)
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -102,7 +102,7 @@ struct AssistantPanel: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(block.range)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(block.createdAt, style: .time)
@@ -110,7 +110,7 @@ struct AssistantPanel: View {
                     .foregroundStyle(.tertiary)
             }
             Text(LocalizedStringKey(block.markdown))
-                .font(.system(size: 12))
+                .font(.callout)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -122,7 +122,7 @@ struct AssistantPanel: View {
         HStack {
             if turn.isUser { Spacer(minLength: 20) }
             Text(turn.text)
-                .font(.system(size: 12))
+                .font(.callout)
                 .textSelection(.enabled)
                 .padding(9)
                 .background(
@@ -136,12 +136,12 @@ struct AssistantPanel: View {
     private var placeholder: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(L("要点会出现在这里"))
-                .font(.system(size: 12, weight: .medium))
+                .font(.callout.weight(.medium))
             Text(L("上课时点「总结」，或打开自动总结（1–10 分钟）。"))
-                .font(.system(size: 11))
+                .font(.callout)
                 .foregroundStyle(.secondary)
             Text(L("也可以直接在下面提问。"))
-                .font(.system(size: 11))
+                .font(.callout)
                 .foregroundStyle(.secondary)
         }
         .padding(.top, 16)
