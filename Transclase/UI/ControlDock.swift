@@ -25,7 +25,7 @@ struct ControlDock: View {
                 LanguageMenu()
 
                 Text(statusLine)
-                    .font(.footnote)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -41,8 +41,8 @@ struct ControlDock: View {
 
                 SessionMenu()
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .glassEffect(.regular, in: .capsule)
 
             StartStopButton()
@@ -145,7 +145,7 @@ struct StartStopButton: View {
                         .foregroundStyle(.white)
                 }
             }
-            .frame(width: isCompact ? 44 : 40, height: isCompact ? 44 : 40)
+            .frame(width: isCompact ? 52 : 40, height: isCompact ? 52 : 40)
             .background {
                 if !model.isRunning {
                     Circle().fill(Color.accentColor)
@@ -162,44 +162,72 @@ struct LanguageMenu: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        Menu {
-            Picker(L("识别语言"), selection: $model.settings.sourceLanguageID) {
-                ForEach(model.speechOptions) { option in
-                    Text(option.displayName).tag(option.id)
-                }
-            }
-            Picker(L("翻译成"), selection: $model.settings.targetLanguageID) {
-                ForEach(model.translationOptions) { option in
-                    Text(option.displayName).tag(option.id)
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "globe")
-                    .font(.system(size: 10, weight: .semibold))
-                Text(shortPair)
-                    .font(.system(size: 11, weight: .medium))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .glassEffect(.regular.interactive(), in: .capsule)
+        // Two separate menus: tapping the left half changes what is being
+        // recognised, the right half changes the target language.
+        HStack(spacing: 0) {
+            languageMenu(
+                title: L("识别语言"),
+                selection: $model.settings.sourceLanguageID,
+                options: model.speechOptions,
+                code: LanguageCode.short(model.settings.sourceLanguageID)
+            )
+
+            Image(systemName: "arrow.right")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 2)
+
+            languageMenu(
+                title: L("翻译成"),
+                selection: $model.settings.targetLanguageID,
+                options: model.translationOptions,
+                code: LanguageCode.short(model.settings.targetLanguageID)
+            )
         }
-        .menuIndicator(.hidden)
-        .buttonStyle(.plain)
-        .fixedSize()
         .disabled(model.isRunning || model.isPreparing)
         .opacity(model.isRunning ? 0.55 : 1)
     }
 
-    private var shortPair: String {
-        let source = L10n.locale.localizedString(forIdentifier: model.settings.sourceLanguageID)
-            ?? model.settings.sourceLanguageID
-        let target = L10n.locale.localizedString(forIdentifier: model.settings.targetLanguageID)
-            ?? model.settings.targetLanguageID
-        return "\(source) → \(target)"
+    private func languageMenu(
+        title: String,
+        selection: Binding<String>,
+        options: [LanguageOption],
+        code: String
+    ) -> some View {
+        Menu {
+            Picker(title, selection: selection) {
+                ForEach(options) { option in
+                    Text(option.displayName).tag(option.id)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Text(code)
+                .font(.system(size: 15, weight: .semibold))
+                .monospaced()
+                .frame(minWidth: 34)
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+        }
+        .menuIndicator(.hidden)
+        .buttonStyle(.plain)
+        .fixedSize()
     }
 }
+
+/// Two-letter codes for the dock, e.g. `es → cn`.
+enum LanguageCode {
+    static func short(_ identifier: String) -> String {
+        let lower = identifier.lowercased()
+        if lower.hasPrefix("zh") {
+            let traditional = lower.contains("hant") || lower.contains("tw")
+                || lower.contains("hk") || lower.contains("mo")
+            return traditional ? "TW" : "CN"
+        }
+        return String(lower.split(separator: "-").first ?? "—").uppercased()
+    }
+}
+
 
 struct SessionMenu: View {
     @EnvironmentObject private var model: AppModel
