@@ -17,6 +17,7 @@ final class AppModel: ObservableObject {
     @Published var statusText = L("就绪")
     @Published var errorMessage: String?
     @Published var level: Float = 0
+    private var lastLevelAt = Date.distantPast
     @Published var scrollGeneration = 0
     @Published var isPinnedToBottom = true
     @Published var startedAt: Date?
@@ -54,6 +55,7 @@ final class AppModel: ObservableObject {
 
     private let pipeline = CaptionPipeline()
     private var markdownCache: (stamp: Int, text: String) = (-1, "")
+    private var shareFileCache: (stamp: Int, url: URL)?
     private var transientDemo = false
     private var summaryTask: Task<Void, Never>?
     private var summarizedCaptionCount = 0
@@ -75,7 +77,14 @@ final class AppModel: ObservableObject {
             self?.errorMessage = message
         }
         pipeline.onLevel = { [weak self] level in
-            self?.level = level
+            guard let self else { return }
+            // The tap fires ~20 times a second; republishing every value made the
+            // whole dock (and the share payload) re-evaluate constantly.
+            let now = Date()
+            guard level != self.level,
+                  now.timeIntervalSince(self.lastLevelAt) > 0.06 else { return }
+            self.lastLevelAt = now
+            self.level = level
         }
         pipeline.onTranslationEngine = { [weak self] label in
             self?.translationEngineLabel = label
@@ -716,6 +725,25 @@ final class AppModel: ObservableObject {
 
     /// Cached by the number of finalized segments: partial updates fire ~10x a
     /// second and must not rebuild the whole document.
+    /// Sharing a file avoids handing the system a multi-kilobyte string, which
+    /// it has to turn into a preview before the sheet can appear.
+    var shareFileURL: URL? {
+        let finals = captions.filter(\.isFinal)
+        guard !finals.isEmpty else { return nil }
+        let translated = finals.reduce(0) { $0 + (($1.target?.isEmpty == false) ? 1 : 0) }
+        let stamp = finals.count * 10_000 + translated
+
+        if let cached = shareFileCache, cached.stamp == stamp { return cached.url }
+
+        let text = translationMarkdown
+        guard !text.isEmpty else { return nil }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Transclase-\(exportFilename)")
+        guard (try? text.write(to: url, atomically: true, encoding: .utf8)) != nil else { return nil }
+        shareFileCache = (stamp, url)
+        return url
+    }
+
     var translationMarkdown: String {
         let finals = captions.filter(\.isFinal)
         // Signature must change when a translation lands, otherwise the export

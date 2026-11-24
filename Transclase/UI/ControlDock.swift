@@ -28,12 +28,15 @@ struct ControlDock: View {
                 // counter lives in the session menu instead.
                 Spacer(minLength: 2)
 
-                ShareLink(item: model.translationMarkdown) {
+                if let url = model.shareFileURL {
+                    ShareLink(item: url) {
+                        DockIcon(systemName: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.plain)
+                } else {
                     DockIcon(systemName: "square.and.arrow.up")
+                        .opacity(0.35)
                 }
-                .buttonStyle(.plain)
-                .disabled(model.captions.isEmpty)
-                .opacity(model.captions.isEmpty ? 0.35 : 1)
 
                 SessionMenu()
             }
@@ -65,13 +68,16 @@ struct ControlDock: View {
 
             StartStopButton()
 
-            ShareLink(item: model.translationMarkdown) {
+            if let url = model.shareFileURL {
+                ShareLink(item: url) {
+                    DockIcon(systemName: "square.and.arrow.up")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("导出逐字稿"))
+            } else {
                 DockIcon(systemName: "square.and.arrow.up")
+                    .opacity(0.35)
             }
-            .buttonStyle(.plain)
-            .disabled(model.captions.isEmpty)
-            .opacity(model.captions.isEmpty ? 0.35 : 1)
-            .accessibilityLabel(L("导出逐字稿"))
 
             SessionMenu()
         }
