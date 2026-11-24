@@ -532,6 +532,25 @@ final class AppModel: ObservableObject {
         refreshSessions()
     }
 
+    /// Deletes whole lectures (their markdown files) from the workspace.
+    func deleteSessions(_ sessions: [LectureSession]) {
+        for session in sessions {
+            try? FileManager.default.removeItem(at: session.url)
+        }
+        if let current = currentSession, sessions.contains(where: { $0.id == current.id }) {
+            currentSession = nil
+            pipeline.clear()
+            captions = []
+            summaries = []
+            chat = []
+        }
+        refreshSessions()
+    }
+
+    func markdown(for session: LectureSession) -> String {
+        SessionStore.read(session)
+    }
+
     func openInFinder(_ session: LectureSession) {
         #if os(macOS)
         NSWorkspace.shared.activateFileViewerSelecting([session.url])
