@@ -5,6 +5,7 @@ import SwiftUI
 struct ControlDock: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.colorScheme) private var colorScheme
 
     /// On a phone the dock only has room for the essentials.
     private var isCompact: Bool { sizeClass == .compact }
@@ -43,9 +44,21 @@ struct ControlDock: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .glassEffect(.regular, in: .capsule)
+            .overlay {
+                Capsule().strokeBorder(
+                    Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08),
+                    lineWidth: 0.5
+                )
+            }
 
             StartStopButton()
                 .glassEffect(.regular, in: .circle)
+                .overlay {
+                    Circle().strokeBorder(
+                        Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08),
+                        lineWidth: 0.5
+                    )
+                }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
