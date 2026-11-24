@@ -42,6 +42,14 @@ struct RootView: View {
                 model.adoptTranslationSession(session)
             }
             .task { await bootstrapOnce() }
+            .overlay {
+                // Edge swipes: workspace from the left, assistant from the right.
+                HStack(spacing: 0) {
+                    edgeSwipe(.leading) { showSessions = true }
+                    Spacer(minLength: 0)
+                    edgeSwipe(.trailing) { showAssistant = true }
+                }
+            }
             .sheet(isPresented: $showSessions) {
                 NavigationStack {
                     SidebarView(showSettings: $showSettings, showsSettingsRow: false, supportsSelection: true)
@@ -214,6 +222,24 @@ struct RootView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ControlDock()
         }
+    }
+
+    /// A narrow invisible strip that only reacts to horizontal drags, so it can
+    /// live on top of scrolling content without stealing vertical gestures.
+    private func edgeSwipe(_ edge: HorizontalEdge, action: @escaping () -> Void) -> some View {
+        Color.clear
+            .frame(width: 24)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 15)
+                    .onEnded { value in
+                        let dx = value.translation.width
+                        let dy = value.translation.height
+                        guard abs(dx) > abs(dy) * 1.5 else { return }
+                        if edge == .leading, dx > 40 { action() }
+                        if edge == .trailing, dx < -40 { action() }
+                    }
+            )
     }
 
     private func bootstrapOnce() async {
