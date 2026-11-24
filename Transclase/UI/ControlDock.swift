@@ -50,11 +50,11 @@ struct ControlDock: View {
             SessionMenu()
         }
         .padding(.horizontal, isCompact ? 8 : 11)
-        .padding(.vertical, isCompact ? 4 : 7)
+        .padding(.vertical, isCompact ? 6 : 7)
         .frame(maxWidth: 460)
         .glassEffect(.regular, in: .rect(cornerRadius: isCompact ? 18 : 20))
         .frame(maxWidth: .infinity)
-        .padding(.bottom, isCompact ? 2 : 6)
+        .padding(.bottom, isCompact ? 6 : 6)
     }
 
     /// Status is a localised key; the segment counter is a separate, formatted
@@ -108,7 +108,7 @@ struct StartStopButton: View {
                         .foregroundStyle(.white)
                 }
             }
-            .frame(width: isCompact ? 34 : 40, height: isCompact ? 34 : 40)
+            .frame(width: isCompact ? 44 : 40, height: isCompact ? 44 : 40)
             .background {
                 if !model.isRunning {
                     Circle().fill(Color.accentColor)

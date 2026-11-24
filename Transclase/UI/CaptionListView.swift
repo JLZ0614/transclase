@@ -91,6 +91,10 @@ struct CaptionRow: View {
     let caption: Caption
     @EnvironmentObject private var model: AppModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// iPhone 上按系统 App 的观感放大：正文约 22pt，原文约 15pt。
+    private var scale: Double { sizeClass == .compact ? 1.4 : 1.0 }
 
     private var isTranslating: Bool {
         caption.isFinal && caption.state == .pending
@@ -100,7 +104,7 @@ struct CaptionRow: View {
         VStack(alignment: .leading, spacing: 6) {
             if model.settings.showOriginal {
                 Text(caption.source)
-                    .font(.system(size: model.settings.fontSize * 0.72))
+                    .font(.system(size: model.settings.fontSize * 0.72 * scale))
                     .foregroundStyle(colorScheme == .dark ? AnyShapeStyle(.secondary)
                                                           : AnyShapeStyle(Color.primary.opacity(0.62)))
                     .opacity(caption.isFinal ? 1 : 0.75)
@@ -108,7 +112,7 @@ struct CaptionRow: View {
 
             if let target = caption.target, !target.isEmpty {
                 Text(target)
-                    .font(.system(size: model.settings.fontSize, weight: .medium))
+                    .font(.system(size: model.settings.fontSize * scale, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineSpacing(3)
                     .opacity(caption.state == .draft ? 0.45 : 1)
