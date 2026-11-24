@@ -10,30 +10,60 @@ struct ControlDock: View {
     private var isCompact: Bool { sizeClass == .compact }
 
     var body: some View {
-        HStack(spacing: isCompact ? 7 : 9) {
+        #if os(iOS)
+        if isCompact { compactDock } else { deskDock }
+        #else
+        deskDock
+        #endif
+    }
+
+    /// iPhone: a capsule for context plus a circle for the primary action,
+    /// mirroring the split Apple Music uses for its mini player.
+    private var compactDock: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                LanguageMenu()
+
+                Text(statusLine)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer(minLength: 2)
+
+                ShareLink(item: model.translationMarkdown) {
+                    DockIcon(systemName: "square.and.arrow.up")
+                }
+                .buttonStyle(.plain)
+                .disabled(model.captions.isEmpty)
+                .opacity(model.captions.isEmpty ? 0.35 : 1)
+
+                SessionMenu()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .glassEffect(.regular, in: .capsule)
+
+            StartStopButton()
+                .glassEffect(.regular, in: .circle)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+
+    /// macOS / iPad: the original single-row bar.
+    private var deskDock: some View {
+        HStack(spacing: 9) {
             LanguageMenu()
 
-            if !isCompact {
-                LevelBars(level: model.level, height: 13)
-            }
+            LevelBars(level: model.level, height: 13)
 
-            if !isCompact {
-                HStack(spacing: 3) {
-                    if let progress = model.speechProgress {
-                        Text(String(format: NSLocalizedString("下载识别模型 %d%%", comment: ""), Int(progress * 100)))
-                    } else {
-                        Text(L(model.statusText))
-                        if !model.captions.isEmpty {
-                            Text("·")
-                            Text(String(format: NSLocalizedString("%d 段", comment: ""), model.captions.count))
-                        }
-                    }
-            }
+            Text(statusLine)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            }
 
             Spacer(minLength: 4)
 
@@ -49,12 +79,19 @@ struct ControlDock: View {
 
             SessionMenu()
         }
-        .padding(.horizontal, isCompact ? 8 : 11)
-        .padding(.vertical, isCompact ? 6 : 7)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
         .frame(maxWidth: 460)
-        .glassEffect(.regular, in: .rect(cornerRadius: isCompact ? 18 : 20))
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
         .frame(maxWidth: .infinity)
-        .padding(.bottom, isCompact ? 6 : 6)
+        .padding(.bottom, 6)
+    }
+
+    /// One-line status used by both layouts.
+    private var statusLine: String {
+        if model.speechProgress != nil { return L("下载中…") }
+        guard !model.captions.isEmpty else { return L(model.statusText) }
+        return String(format: NSLocalizedString("%d 段", comment: ""), model.captions.count)
     }
 
     /// Status is a localised key; the segment counter is a separate, formatted
