@@ -40,19 +40,9 @@ struct AppBackdrop: View {
                 // panels read better against a neutral backdrop anyway.
                 Color.black
             } else {
-                Color.appBackground
-                RadialGradient(
-                    colors: [Color.accentColor.opacity(0.13), .clear],
-                    center: .topLeading,
-                    startRadius: 20,
-                    endRadius: 720
-                )
-                RadialGradient(
-                    colors: [Color.blue.opacity(0.06), .clear],
-                    center: .bottomTrailing,
-                    startRadius: 20,
-                    endRadius: 560
-                )
+                // Light appearance: flat white. The coloured washes made the
+                // page look like a blue-white gradient rather than paper.
+                Color.white
             }
         }
         .ignoresSafeArea()
