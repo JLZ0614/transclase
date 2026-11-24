@@ -5,13 +5,21 @@ import SwiftUI
 /// modal sheet, so it never blocks the captions.
 struct AssistantPanel: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.colorScheme) private var colorScheme
     /// The sheet already has a navigation title; don't repeat it in the header.
     var showsTitle: Bool = true
+    /// Inside a sheet the system material should show through, matching the
+    /// workspace sheet instead of painting the solid app backdrop.
+    var translucent: Bool = false
     @State private var question = ""
 
     var body: some View {
         ZStack {
-            AppBackdrop()
+            if translucent {
+                Color.black.opacity(colorScheme == .dark ? 0.38 : 0.02)
+            } else {
+                AppBackdrop()
+            }
             content
         }
     }

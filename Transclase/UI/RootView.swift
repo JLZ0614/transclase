@@ -62,7 +62,7 @@ struct RootView: View {
             }
             .sheet(isPresented: $showAssistant) {
                 NavigationStack {
-                    AssistantPanel(showsTitle: false)
+                    AssistantPanel(showsTitle: false, translucent: true)
                         .navigationTitle(L("翻译助手"))
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { ToolbarItem(placement: .topBarTrailing) {
