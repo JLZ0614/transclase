@@ -53,8 +53,16 @@ struct RootView: View {
                 .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showAssistant) {
-                NavigationStack { AssistantPanel() }
-                    .environmentObject(model)
+                NavigationStack {
+                    AssistantPanel()
+                        .navigationTitle(L("翻译助手"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar { ToolbarItem(placement: .topBarTrailing) {
+                            Button(L("完成")) { showAssistant = false }
+                        } }
+                }
+                .environmentObject(model)
+                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showSettings) { SettingsSheet().environmentObject(model) }
         }

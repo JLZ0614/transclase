@@ -5,6 +5,8 @@ import SwiftUI
 /// modal sheet, so it never blocks the captions.
 struct AssistantPanel: View {
     @EnvironmentObject private var model: AppModel
+    /// The sheet already has a navigation title; don't repeat it in the header.
+    var showsTitle: Bool = true
     @State private var question = ""
 
     var body: some View {
@@ -63,8 +65,10 @@ struct AssistantPanel: View {
 
     private var header: some View {
         return HStack(spacing: 8) {
-            Text(L("翻译助手"))
-                .font(.system(size: 12, weight: .semibold))
+            if showsTitle {
+                Text(L("翻译助手"))
+                    .font(.system(size: 12, weight: .semibold))
+            }
             Spacer()
             Menu {
                 Picker(L("总结间隔"), selection: $model.settings.summaryIntervalMinutes) {
