@@ -44,7 +44,7 @@ struct RootView: View {
             .task { await bootstrapOnce() }
             .sheet(isPresented: $showSessions) {
                 NavigationStack {
-                    SidebarView(showSettings: $showSettings)
+                    SidebarView(showSettings: $showSettings, showsSettingsRow: false)
                         .toolbar { ToolbarItem(placement: .topBarTrailing) {
                             Button(L("完成")) { showSessions = false }
                         } }

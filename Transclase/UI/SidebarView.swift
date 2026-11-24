@@ -4,6 +4,8 @@ struct SidebarView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.colorScheme) private var colorScheme
     @Binding var showSettings: Bool
+    /// On iPhone the toolbar already has a gear, so the row would duplicate it.
+    var showsSettingsRow: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {

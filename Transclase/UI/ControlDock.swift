@@ -49,12 +49,12 @@ struct ControlDock: View {
 
             SessionMenu()
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 7)
+        .padding(.horizontal, isCompact ? 8 : 11)
+        .padding(.vertical, isCompact ? 4 : 7)
         .frame(maxWidth: 460)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        .glassEffect(.regular, in: .rect(cornerRadius: isCompact ? 18 : 20))
         .frame(maxWidth: .infinity)
-        .padding(.bottom, 6)
+        .padding(.bottom, isCompact ? 2 : 6)
     }
 
     /// Status is a localised key; the segment counter is a separate, formatted
@@ -82,6 +82,9 @@ private struct DockIcon: View {
 struct StartStopButton: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isCompact: Bool { sizeClass == .compact }
 
     var body: some View {
         Button {
@@ -105,7 +108,7 @@ struct StartStopButton: View {
                         .foregroundStyle(.white)
                 }
             }
-            .frame(width: 40, height: 40)
+            .frame(width: isCompact ? 34 : 40, height: isCompact ? 34 : 40)
             .background {
                 if !model.isRunning {
                     Circle().fill(Color.accentColor)
