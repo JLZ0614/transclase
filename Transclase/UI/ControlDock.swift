@@ -24,12 +24,8 @@ struct ControlDock: View {
             HStack(spacing: 8) {
                 LanguageMenu()
 
-                Text(statusLine)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
+                // Full language names already fill the capsule; the segment
+                // counter lives in the session menu instead.
                 Spacer(minLength: 2)
 
                 ShareLink(item: model.translationMarkdown) {
@@ -169,7 +165,7 @@ struct LanguageMenu: View {
                 title: L("识别语言"),
                 selection: $model.settings.sourceLanguageID,
                 options: model.speechOptions,
-                code: LanguageCode.short(model.settings.sourceLanguageID)
+                label: displayName(for: model.settings.sourceLanguageID)
             )
 
             Image(systemName: "arrow.right")
@@ -181,18 +177,22 @@ struct LanguageMenu: View {
                 title: L("翻译成"),
                 selection: $model.settings.targetLanguageID,
                 options: model.translationOptions,
-                code: LanguageCode.short(model.settings.targetLanguageID)
+                label: displayName(for: model.settings.targetLanguageID)
             )
         }
         .disabled(model.isRunning || model.isPreparing)
         .opacity(model.isRunning ? 0.55 : 1)
     }
 
+    private func displayName(for identifier: String) -> String {
+        L10n.locale.localizedString(forIdentifier: identifier) ?? identifier
+    }
+
     private func languageMenu(
         title: String,
         selection: Binding<String>,
         options: [LanguageOption],
-        code: String
+        label: String
     ) -> some View {
         Menu {
             Picker(title, selection: selection) {
@@ -202,10 +202,9 @@ struct LanguageMenu: View {
             }
             .pickerStyle(.inline)
         } label: {
-            Text(code)
-                .font(.system(size: 15, weight: .semibold))
-                .monospaced()
-                .frame(minWidth: 34)
+            Text(label)
+                .font(.subheadline)
+                .lineLimit(1)
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())
         }
@@ -215,18 +214,7 @@ struct LanguageMenu: View {
     }
 }
 
-/// Two-letter codes for the dock, e.g. `es → cn`.
-enum LanguageCode {
-    static func short(_ identifier: String) -> String {
-        let lower = identifier.lowercased()
-        if lower.hasPrefix("zh") {
-            let traditional = lower.contains("hant") || lower.contains("tw")
-                || lower.contains("hk") || lower.contains("mo")
-            return traditional ? "TW" : "CN"
-        }
-        return String(lower.split(separator: "-").first ?? "—").uppercased()
-    }
-}
+
 
 
 struct SessionMenu: View {
