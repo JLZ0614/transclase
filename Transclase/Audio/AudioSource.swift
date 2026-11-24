@@ -53,7 +53,7 @@ final class MicrophoneSource: AudioSource {
         // iOS needs an explicit session; without it the engine produces silence
         // and the mic indicator never appears.
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetooth, .defaultToSpeaker])
+        try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetoothHFP, .defaultToSpeaker])
         try session.setActive(true, options: [])
         #endif
 

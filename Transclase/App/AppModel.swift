@@ -161,9 +161,7 @@ final class AppModel: ObservableObject {
         // Apple's Translation framework reports "not supported on simulator";
         // asking for a session there only produces a blocking system alert.
         translationConfiguration = nil
-        return
-        #endif
-
+        #else
         guard !isDemoActive else {
             translationConfiguration = nil
             return
@@ -187,6 +185,7 @@ final class AppModel: ObservableObject {
 
         translationConfiguration = TranslationSession.Configuration(source: source, target: target)
         Task { await refreshLanguagePackStatus() }
+        #endif
     }
 
     func refreshLanguagePackStatus() async {
