@@ -72,11 +72,19 @@ struct AssistantPanel: View {
     }
 
     private var header: some View {
-        return HStack(spacing: 8) {
+        return HStack(spacing: 10) {
+            AIOrb(size: 26)
+
             if showsTitle {
-                Text(L("翻译助手"))
-                    .font(.system(size: 12, weight: .semibold))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L("翻译助手"))
+                        .font(.subheadline.weight(.semibold))
+                    Text(L("要点总结 · 课堂问答"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
+
             Spacer()
             Menu {
                 Picker(L("总结间隔"), selection: $model.settings.summaryIntervalMinutes) {
@@ -97,12 +105,16 @@ struct AssistantPanel: View {
                 Task { await model.summarizeNow() }
             } label: {
                 if model.assistantBusy {
-                    ProgressView().controlSize(.mini)
+                    ProgressView().controlSize(.mini).tint(.white)
                 } else {
-                    Text(L("总结")).font(.system(size: 11, weight: .medium))
+                    Label(L("总结"), systemImage: "sparkles")
+                        .font(.footnote.weight(.semibold))
+                        .labelStyle(.titleAndIcon)
+                        .padding(.horizontal, 4)
                 }
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color(red: 0.42, green: 0.39, blue: 0.95))
             .controlSize(.small)
             .disabled(model.assistantBusy)
         }
@@ -146,9 +158,17 @@ struct AssistantPanel: View {
     }
 
     private var placeholder: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Spacer()
+                AIOrb(size: 64)
+                Spacer()
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+
             Text(L("要点会出现在这里"))
-                .font(.system(size: 12, weight: .medium))
+                .font(.headline)
             Text(L("上课时点「总结」，或打开自动总结（1–10 分钟）。"))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
@@ -163,5 +183,44 @@ struct AssistantPanel: View {
         let text = question
         question = ""
         Task { await model.ask(text) }
+    }
+}
+
+
+/// Glowing orb used as the assistant's identity: a soft gradient ring around a
+/// sparkles glyph, in the spirit of Apple Intelligence's mark.
+struct AIOrb: View {
+    var size: CGFloat = 32
+
+    private var gradient: AngularGradient {
+        AngularGradient(
+            colors: [
+                Color(red: 0.36, green: 0.55, blue: 1.00),
+                Color(red: 0.62, green: 0.40, blue: 0.98),
+                Color(red: 0.98, green: 0.44, blue: 0.72),
+                Color(red: 0.98, green: 0.66, blue: 0.42),
+                Color(red: 0.36, green: 0.55, blue: 1.00),
+            ],
+            center: .center
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(gradient)
+                .blur(radius: size * 0.12)
+                .opacity(0.6)
+
+            Circle()
+                .fill(.ultraThinMaterial)
+                .overlay(Circle().strokeBorder(gradient, lineWidth: size * 0.06))
+
+            Image(systemName: "sparkles")
+                .font(.system(size: size * 0.42, weight: .semibold))
+                .foregroundStyle(gradient)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
