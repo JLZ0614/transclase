@@ -291,21 +291,7 @@ struct EmptyStateView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            ZStack {
-                // Same translucent recipe as the dock capsule, so the mark
-                // adapts with the appearance instead of staying light.
-                Circle()
-                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.03))
-                Circle()
-                    .strokeBorder(
-                        Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08),
-                        lineWidth: 0.5
-                    )
-                Image(systemName: "waveform")
-                    .font(.system(size: 38, weight: .light))
-                    .foregroundStyle(.tint)
-            }
-            .frame(width: 88, height: 88)
+            BrandGlyph(size: 96)
 
             VStack(spacing: 7) {
                 Text(L("点「新对话」开始一节课"))
