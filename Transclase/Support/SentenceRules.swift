@@ -35,9 +35,58 @@ enum SentenceRules {
         return true
     }
 
-    /// Sentences longer than this are flushed even without a boundary, so the
-    /// reader never waits through a whole monologue.
+    /// Roughly 20 English words. Longer input measurably degrades Apple's
+    /// on-device translation, so segments are kept short on purpose.
+    static let maxWords = 20
+    /// CJK text has no spaces; count characters instead.
+    static let maxCJKCharacters = 42
+
+    static func isSpaced(_ text: String) -> Bool {
+        text.contains(" ")
+    }
+
+    static func words(in text: String) -> [String] {
+        text.split(whereSeparator: { $0 == " " || $0 == "\n" || $0 == "\t" })
+            .map(String.init)
+    }
+
     static func tooLong(_ text: String) -> Bool {
-        text.count > 150
+        if isSpaced(text) {
+            return words(in: text).count > maxWords
+        }
+        return text.count > maxCJKCharacters
+    }
+
+    /// Splits an over-long sentence into chunks of at most `maxWords` words,
+    /// preferring to end a chunk on punctuation.
+    static func chunks(of text: String) -> [String] {
+        guard tooLong(text) else { return [text] }
+
+        if isSpaced(text) {
+            var out: [String] = []
+            var current: [String] = []
+            for word in words(in: text) {
+                current.append(word)
+                let closedByPunctuation = word.last.map { terminals.contains($0) } ?? false
+                if current.count >= maxWords || (closedByPunctuation && current.count >= maxWords / 2) {
+                    out.append(current.joined(separator: " "))
+                    current = []
+                }
+            }
+            if !current.isEmpty { out.append(current.joined(separator: " ")) }
+            return out.isEmpty ? [text] : out
+        }
+
+        var out: [String] = []
+        var buffer = ""
+        for character in text {
+            buffer.append(character)
+            if buffer.count >= maxCJKCharacters || (terminals.contains(character) && buffer.count >= maxCJKCharacters / 2) {
+                out.append(buffer)
+                buffer = ""
+            }
+        }
+        if !buffer.trimmingCharacters(in: .whitespaces).isEmpty { out.append(buffer) }
+        return out.isEmpty ? [text] : out
     }
 }
