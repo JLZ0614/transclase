@@ -131,3 +131,32 @@ struct BrandMark: View {
         .accessibilityHidden(true)
     }
 }
+
+
+/// 只画三根柱子，无底板、透明背景——用于工具栏这类小尺寸场景。
+struct BrandGlyph: View {
+    var size: CGFloat = 26
+
+    private let top = Color(red: 0.40, green: 0.91, blue: 0.98)
+    private let bottom = Color(red: 0.15, green: 0.39, blue: 0.92)
+
+    private var gradient: LinearGradient {
+        LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+    }
+
+    private func bar(_ factor: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: size * 0.085, style: .continuous)
+            .fill(gradient)
+            .frame(width: size * 0.20, height: size * 0.86 * factor)
+    }
+
+    var body: some View {
+        HStack(spacing: size * 0.115) {
+            bar(0.62)
+            bar(1.0)
+            bar(0.62)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}

@@ -32,7 +32,7 @@ struct RootView: View {
                     Button(L("工作区")) { showSessions = true }
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { showAssistant = true } label: { BrandMark(size: 26) }
+                    Button { showAssistant = true } label: { BrandGlyph(size: 24) }
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                 }
             }
