@@ -33,7 +33,7 @@ final class CaptionPipeline {
     /// fall behind the lecturer whenever the cloud took more than ~2s.
     private var activeTranslations = 0
     private var translationQueue: [(id: String, text: String)] = []
-    private let maxParallelTranslations = 3
+    private let maxParallelTranslations = 2
 
     private var pendingFinalTranslations = 0
 
@@ -427,6 +427,21 @@ final class CaptionPipeline {
                 self.drainTranslations()
             }
         }
+    }
+
+    /// Re-runs one caption that failed, so the reader does not have to restart
+    /// the whole lecture.
+    func retranslate(id: String) {
+        guard let index = captions.firstIndex(where: { $0.id == id }) else { return }
+        guard captions[index].isFinal else { return }
+        captions[index].state = .pending
+        publish()
+        translateFinal(
+            id: id,
+            text: captions[index].source,
+            start: captions[index].start,
+            end: captions[index].end
+        )
     }
 
     private func finishTranslation(id: String, text: String, translated: String) {

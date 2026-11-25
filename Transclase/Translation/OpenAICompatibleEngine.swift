@@ -52,12 +52,15 @@ final class OpenAICompatibleEngine: MTEngine {
             ],
         ]
 
-        let data = try await request(
-            path: "chat/completions",
-            method: "POST",
-            body: try JSONSerialization.data(withJSONObject: body),
-            timeout: 20
-        )
+        let payload = try JSONSerialization.data(withJSONObject: body)
+        let data = try await withRetry {
+            try await self.request(
+                path: "chat/completions",
+                method: "POST",
+                body: payload,
+                timeout: 20
+            )
+        }
 
         guard
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -118,6 +121,34 @@ final class OpenAICompatibleEngine: MTEngine {
         Translate only this sentence:
         \(text)
         """
+    }
+
+    /// Cloud endpoints occasionally answer 429/503 or drop the connection for a
+    /// single sentence. Retrying turns those into a short delay instead of a
+    /// permanently untranslated caption.
+    private func withRetry(_ operation: () async throws -> Data) async throws -> Data {
+        var lastError: Error?
+        for attempt in 0..<3 {
+            do {
+                return try await operation()
+            } catch {
+                lastError = error
+                guard Self.isTransient(error) else { throw error }
+                let pause = 0.5 * Double(attempt + 1)
+                try? await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000))
+            }
+        }
+        throw lastError ?? MTError.failed(L("翻译请求失败"))
+    }
+
+    private static func isTransient(_ error: Error) -> Bool {
+        guard case let MTError.failed(message) = error else { return true }
+        if message.contains("HTTP 429") || message.contains("HTTP 5") { return true }
+        // URLSession timeouts and dropped connections arrive as plain errors.
+        return message.contains("The request timed out")
+            || message.contains("网络连接已中断")
+            || message.contains("network connection was lost")
+            || message.contains("超时")
     }
 
     // MARK: - Transport

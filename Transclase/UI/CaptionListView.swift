@@ -117,6 +117,15 @@ struct CaptionRow: View {
                     .lineSpacing(3)
                     .opacity(caption.state == .draft ? 0.45 : 1)
                     .contentTransition(.opacity)
+            } else if case .failed = caption.state {
+                Button {
+                    model.retranslate(caption)
+                } label: {
+                    Label(L("翻译失败，点按重试"), systemImage: "arrow.clockwise")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
             } else if isTranslating {
                 HStack(spacing: 6) {
                     ProgressView()

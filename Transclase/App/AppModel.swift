@@ -595,6 +595,10 @@ final class AppModel: ObservableObject {
             || parts[0] == 127
     }
 
+    func retranslate(_ caption: Caption) {
+        pipeline.retranslate(id: caption.id)
+    }
+
     func openInFinder(_ session: LectureSession) {
         #if os(macOS)
         NSWorkspace.shared.activateFileViewerSelecting([session.url])
