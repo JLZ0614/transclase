@@ -183,11 +183,15 @@ final class AppModel: ObservableObject {
             return
         }
 
-        translationConfiguration = TranslationSession.Configuration(
-            source: source,
-            target: target,
-            preferredStrategy: settings.highFidelityTranslation ? .highFidelity : .lowLatency
-        )
+        if #available(iOS 26.4, macOS 26.4, *) {
+            translationConfiguration = TranslationSession.Configuration(
+                source: source,
+                target: target,
+                preferredStrategy: settings.highFidelityTranslation ? .highFidelity : .lowLatency
+            )
+        } else {
+            translationConfiguration = TranslationSession.Configuration(source: source, target: target)
+        }
         Task { await refreshLanguagePackStatus() }
         #endif
     }
