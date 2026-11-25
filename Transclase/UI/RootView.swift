@@ -182,7 +182,7 @@ struct RootView: View {
         HStack(spacing: 0) {
             if showSidebar {
                 SidebarView(showSettings: $showSettings)
-                    .frame(width: 260)
+                    .frame(width: 270)
                 Divider()
             }
 
@@ -192,7 +192,7 @@ struct RootView: View {
                 Divider()
                 AssistantPanel()
                     .environmentObject(model)
-                    .frame(width: 320)
+                    .frame(width: 340)
             }
         }
     }
@@ -420,7 +420,16 @@ private struct WindowSizer: NSViewRepresentable {
                     ? .black
                     : .underPageBackgroundColor
             }
-            window.minSize = NSSize(width: 720, height: 480)
+            window.minSize = NSSize(width: 960, height: 560)
+
+            // A window restored from an older build can be narrower than the
+            // three-column minimum; widen it once so the layout is not cramped.
+            if window.frame.width < 960 {
+                var frame = window.frame
+                frame.size = NSSize(width: 1180, height: max(frame.height, 760))
+                window.setFrame(frame, display: true)
+                window.center()
+            }
             if !context.coordinator.didSize {
                 context.coordinator.didSize = true
                 // About a quarter of the screen: half the width, half the height.
