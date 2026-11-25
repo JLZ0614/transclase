@@ -29,7 +29,11 @@ final class CaptionPipeline {
 
     private var audioTask: Task<Void, Never>?
     private var eventTask: Task<Void, Never>?
-    private var translationTail: Task<Void, Never>?
+    /// Final translations run a few at a time; a strictly serial queue used to
+    /// fall behind the lecturer whenever the cloud took more than ~2s.
+    private var activeTranslations = 0
+    private var translationQueue: [(id: String, text: String)] = []
+    private let maxParallelTranslations = 3
 
     private var pendingFinalTranslations = 0
 
@@ -232,8 +236,8 @@ final class CaptionPipeline {
         eventTask?.cancel()
         eventTask = nil
 
-        translationTail?.cancel()
-        translationTail = nil
+        translationQueue.removeAll()
+        activeTranslations = 0
         pendingFinalTranslations = 0
         translationEnabled = true
         asr = nil
@@ -388,19 +392,39 @@ final class CaptionPipeline {
     // MARK: - Translation
 
     private func translateFinal(id: String, text: String, start: TimeInterval, end: TimeInterval) {
-        guard translationEnabled, let mt else { return }
+        guard translationEnabled, mt != nil else { return }
         pendingFinalTranslations += 1
-        let previous = translationTail
-        translationTail = Task { [weak self] in
-            _ = await previous?.value
-            guard let self else { return }
-            defer { self.pendingFinalTranslations = max(0, self.pendingFinalTranslations - 1) }
-            do {
-                let raw = try await mt.translate(text)
-                let translated = ChineseVariant.normalized(raw, for: self.settings.targetLanguageID)
-                self.finishTranslation(id: id, text: text, translated: translated)
-            } catch {
-                self.failTranslation(id: id, text: text, message: error.localizedDescription)
+        translationQueue.append((id: id, text: text))
+        drainTranslations()
+    }
+
+    /// Starts as many queued translations as the concurrency budget allows.
+    private func drainTranslations() {
+        while activeTranslations < maxParallelTranslations,
+              !translationQueue.isEmpty,
+              let mt {
+            let job = translationQueue.removeFirst()
+            activeTranslations += 1
+
+            Task { [weak self] in
+                var translated: String?
+                var failure: String?
+                do {
+                    let raw = try await mt.translate(job.text)
+                    translated = ChineseVariant.normalized(raw, for: self?.settings.targetLanguageID ?? "zh-Hans")
+                } catch {
+                    failure = error.localizedDescription
+                }
+
+                guard let self else { return }
+                self.activeTranslations = max(0, self.activeTranslations - 1)
+                self.pendingFinalTranslations = max(0, self.pendingFinalTranslations - 1)
+                if let translated {
+                    self.finishTranslation(id: job.id, text: job.text, translated: translated)
+                } else if let failure {
+                    self.failTranslation(id: job.id, text: job.text, message: failure)
+                }
+                self.drainTranslations()
             }
         }
     }

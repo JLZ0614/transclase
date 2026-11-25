@@ -12,7 +12,9 @@ final class OpenAICompatibleEngine: MTEngine {
     private let session: URLSession
 
     /// Last couple of sentence pairs, so pronouns and omitted subjects survive.
+    /// Guarded because several sentences may be in flight at once.
     private var history: [(source: String, target: String)] = []
+    private let historyLock = NSLock()
 
     init(baseURL: URL, model: String, apiKey: String?, sourceName: String, targetName: String) {
         self.baseURL = baseURL
@@ -69,8 +71,10 @@ final class OpenAICompatibleEngine: MTEngine {
         let cleaned = Self.clean(content)
         guard !cleaned.isEmpty else { throw MTError.failed(L("模型返回空结果")) }
 
+        historyLock.lock()
         history.append((text, cleaned))
         if history.count > 2 { history.removeFirst(history.count - 2) }
+        historyLock.unlock()
         return cleaned
     }
 
@@ -88,8 +92,12 @@ final class OpenAICompatibleEngine: MTEngine {
     }
 
     private func userPrompt(for text: String) -> String {
-        guard !history.isEmpty else { return text }
-        let context = history
+        historyLock.lock()
+        let snapshot = history
+        historyLock.unlock()
+
+        guard !snapshot.isEmpty else { return text }
+        let context = snapshot
             .map { "\($0.source)\n→ \($0.target)" }
             .joined(separator: "\n\n")
         return """

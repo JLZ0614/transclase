@@ -7,6 +7,15 @@ struct LLMClient {
     let model: String
     let apiKey: String?
 
+    /// Shared so repeated calls reuse the TLS connection instead of paying a
+    /// handshake per request.
+    private static let sharedSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 20
+        config.httpMaximumConnectionsPerHost = 4
+        return URLSession(configuration: config)
+    }()
+
     enum ClientError: LocalizedError {
         case badStatus(Int, String)
         case malformed
@@ -34,9 +43,7 @@ struct LLMClient {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
 
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = timeout
-        let (data, response) = try await URLSession(configuration: config).data(for: request)
+        let (data, response) = try await Self.sharedSession.data(for: request)
 
         guard let http = response as? HTTPURLResponse else { throw ClientError.malformed }
         guard (200..<300).contains(http.statusCode) else {
@@ -71,10 +78,7 @@ struct LLMClient {
             "messages": messages,
         ])
 
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = timeout
-        config.timeoutIntervalForResource = timeout + 15
-        let (data, response) = try await URLSession(configuration: config).data(for: request)
+        let (data, response) = try await Self.sharedSession.data(for: request)
 
         guard let http = response as? HTTPURLResponse else { throw ClientError.malformed }
         guard (200..<300).contains(http.statusCode) else {
