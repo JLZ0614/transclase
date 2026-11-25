@@ -86,3 +86,48 @@ struct StatusDot: View {
             }
     }
 }
+
+
+/// App 图标的矢量版本：磨砂玻璃方块 + 三根青蓝渐变柱。
+/// 用于工具栏和空状态，保证界面和应用图标是同一个标志。
+struct BrandMark: View {
+    var size: CGFloat = 26
+
+    private let top = Color(red: 0.40, green: 0.91, blue: 0.98)
+    private let bottom = Color(red: 0.15, green: 0.39, blue: 0.92)
+
+    private var gradient: LinearGradient {
+        LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+    }
+
+    private func bar(_ factor: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: size * 0.055, style: .continuous)
+            .fill(gradient)
+            .frame(width: size * 0.155, height: size * 0.56 * factor)
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.white, Color(red: 0.91, green: 0.94, blue: 0.985)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                }
+
+            HStack(spacing: size * 0.085) {
+                bar(0.62)
+                bar(1.0)
+                bar(0.62)
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}

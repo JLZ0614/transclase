@@ -30,6 +30,7 @@ struct SettingsSheet: View {
                 translationSection
                 providerSection
                 displaySection
+                iconSection
                 behaviorSection
                 assistantSection
                 aboutSection
@@ -270,6 +271,30 @@ struct SettingsSheet: View {
             Toggle(L("显示原文"), isOn: $model.settings.showOriginal)
             Toggle(L("自动跟随最新字幕"), isOn: $model.settings.autoScroll)
         }
+    }
+
+    /// iOS lets an app ship alternate icons; the monochrome mark lives in
+    /// Assets.xcassets/AppIconMono.appiconset.
+    @ViewBuilder
+    private var iconSection: some View {
+        #if os(iOS)
+        Section {
+            let current = UIApplication.shared.alternateIconName
+            Picker(L("应用图标"), selection: Binding(
+                get: { current },
+                set: { newValue in
+                    UIApplication.shared.setAlternateIconName(newValue) { _ in }
+                }
+            )) {
+                Label(L("彩色"), systemImage: "paintpalette").tag(String?.none)
+                Label(L("黑白"), systemImage: "circle.lefthalf.filled").tag(String?.some("AppIconMono"))
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        } header: {
+            Text(L("应用图标"))
+        }
+        #endif
     }
 
     private var behaviorSection: some View {
