@@ -42,7 +42,6 @@ final class AppModel: ObservableObject {
     @Published var localizationToken = UUID()
     @Published var isFullScreen = false
     @Published var windowSize: CGSize = CGSize(width: 1200, height: 860)
-    @Published var menusNeedRelaunch = false
     /// Language the process actually started with; the menu bar is frozen to it.
     private let launchLanguage = AppSettings.load().appLanguage
     @Published var engineTestResult: String? 
@@ -464,8 +463,16 @@ final class AppModel: ObservableObject {
     func switchLanguage(_ language: AppLanguage) {
         L10n.set(language.localeIdentifier)
         localizationToken = UUID()
-        // The menu bar only matches after a relaunch, whatever the target is.
-        menusNeedRelaunch = language != launchLanguage
+
+        // Language names are resolved at load time, so the catalogue has to be
+        // rebuilt for the new locale.
+        Task { [weak self] in
+            let catalog = await LanguageCatalog.load()
+            guard let self else { return }
+            self.speechOptions = catalog.speech
+            self.translationOptions = catalog.translation
+            await self.refreshLanguagePackStatus()
+        }
     }
 
     /// Keeps the screen on while a lecture is being captured; a locked phone

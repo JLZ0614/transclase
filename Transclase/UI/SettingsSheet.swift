@@ -77,17 +77,6 @@ struct SettingsSheet: View {
             .onChange(of: model.settings.appLanguage) { _, language in
                 model.switchLanguage(language)
             }
-
-            if model.menusNeedRelaunch {
-                HStack {
-                    Text(L("顶部菜单栏会在下次启动时同步。"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button(L("立即重启")) { model.relaunch() }
-                        .buttonStyle(.borderless)
-                }
-            }
         } header: {
             Text(L("语言"))
         }

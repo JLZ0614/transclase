@@ -20,7 +20,7 @@ enum SessionStore {
 
     private static var formatter: DateFormatter {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "zh_Hans_CN")
+        f.locale = L10n.locale
         f.dateFormat = "EEE-MM-dd"
         return f
     }
