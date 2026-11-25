@@ -183,7 +183,11 @@ final class AppModel: ObservableObject {
             return
         }
 
-        translationConfiguration = TranslationSession.Configuration(source: source, target: target)
+        translationConfiguration = TranslationSession.Configuration(
+            source: source,
+            target: target,
+            preferredStrategy: settings.highFidelityTranslation ? .highFidelity : .lowLatency
+        )
         Task { await refreshLanguagePackStatus() }
         #endif
     }

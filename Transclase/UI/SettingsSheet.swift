@@ -107,6 +107,14 @@ struct SettingsSheet: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            if model.settings.translationEngine == .apple {
+                Toggle(L("高质量翻译"), isOn: $model.settings.highFidelityTranslation)
+                    .disabled(model.isRunning)
+                Text(L("关闭后改用低延迟模式，响应更快，措辞会更直译。"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
 
             if model.settings.translationEngine != .apple {
                 Button {

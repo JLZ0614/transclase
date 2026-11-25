@@ -10,6 +10,9 @@ struct AppSettings: Codable, Equatable {
     var appLanguage: AppLanguage = .system
     var appearance: AppAppearance = .system
     var showOriginal: Bool = true
+    /// Apple's `Translation` exposes a fidelity/latency trade-off; high fidelity
+    /// reads noticeably better but answers a little slower.
+    var highFidelityTranslation: Bool = true
     var fontSize: Double = 16
     var demoMode: Bool = false
     var autoScroll: Bool = true
@@ -32,7 +35,7 @@ struct AppSettings: Codable, Equatable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case sourceLanguageID, targetLanguageID, showOriginal, fontSize, demoMode, autoScroll
+        case sourceLanguageID, targetLanguageID, showOriginal, highFidelityTranslation, fontSize, demoMode, autoScroll
         case translationEngine, cloudBaseURL, cloudModel
         case providers, activeProviderID, appLanguage, appearance
         case assistantEnabled, summaryIntervalMinutes
@@ -44,6 +47,7 @@ struct AppSettings: Codable, Equatable {
         sourceLanguageID = try c.decodeIfPresent(String.self, forKey: .sourceLanguageID) ?? d.sourceLanguageID
         targetLanguageID = try c.decodeIfPresent(String.self, forKey: .targetLanguageID) ?? d.targetLanguageID
         showOriginal = try c.decodeIfPresent(Bool.self, forKey: .showOriginal) ?? d.showOriginal
+        highFidelityTranslation = try c.decodeIfPresent(Bool.self, forKey: .highFidelityTranslation) ?? d.highFidelityTranslation
         fontSize = try c.decodeIfPresent(Double.self, forKey: .fontSize) ?? d.fontSize
         demoMode = try c.decodeIfPresent(Bool.self, forKey: .demoMode) ?? d.demoMode
         autoScroll = try c.decodeIfPresent(Bool.self, forKey: .autoScroll) ?? d.autoScroll

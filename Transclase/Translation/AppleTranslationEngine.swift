@@ -43,7 +43,14 @@ final class AppleTranslationEngine: MTEngine {
     }
 
     func translate(_ text: String) async throws -> String {
-        guard let session = sessionProvider() else {
+        // The session arrives asynchronously from `.translationTask`; a sentence
+        // that lands during startup should wait briefly instead of failing.
+        var session = sessionProvider()
+        if session == nil {
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            session = sessionProvider()
+        }
+        guard let session else {
             throw MTError.sessionNotReady
         }
         do {
