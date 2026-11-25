@@ -135,6 +135,12 @@
 "在访达中显示" = "Show in Finder";
 "还没有课堂记录" = "No sessions yet";
 "麦克风音量" = "Microphone volume";
+"开始下载" = "Start download";
+"下载中…" = "Downloading…";
+"高质量翻译" = "High-quality translation";
+"测试 API 连接" = "Test API connection";
+"翻译失败，点按重试" = "Translation failed — tap to retry";
+"翻译引擎尚未就绪" = "Translation engine is not ready yet";
 "%d 段" = "%d segments";
 "下载识别模型 %d%%" = "Downloading speech model %d%%";
 "上课时点「总结」，或打开自动总结（1–10 分钟）。" = "Press Summarise during a lecture, or enable auto-summary (1–10 min).";

@@ -43,6 +43,7 @@ struct ControlDock: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .glassEffect(.regular, in: .capsule)
             .overlay {
                 Capsule().strokeBorder(
@@ -140,7 +141,13 @@ struct StartStopButton: View {
 
     var body: some View {
         Button {
-            Task { await model.toggle() }
+            Task {
+                if model.needsDownloads, !model.isRunning {
+                    await model.prepareOfflinePack()
+                } else {
+                    await model.toggle()
+                }
+            }
         } label: {
             ZStack {
                 if model.isPreparing {
@@ -154,6 +161,10 @@ struct StartStopButton: View {
                     RoundedRectangle(cornerRadius: 3)
                         .fill(colorScheme == .dark ? Color.white : Color.black)
                         .frame(width: 14, height: 14)
+                } else if model.needsDownloads {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
                 } else {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 15, weight: .bold))
@@ -169,12 +180,15 @@ struct StartStopButton: View {
         }
         .buttonStyle(.plain)
         .disabled(model.isPreparing)
-        .accessibilityLabel(model.isRunning ? L("停止") : L("开始"))
+        .accessibilityLabel(model.isRunning ? L("停止") : (model.needsDownloads ? L("下载") : L("开始")))
     }
 }
 
 struct LanguageMenu: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isCompact: Bool { sizeClass == .compact }
 
     var body: some View {
         // Two separate menus: tapping the left half changes what is being
@@ -204,7 +218,15 @@ struct LanguageMenu: View {
     }
 
     private func displayName(for identifier: String) -> String {
-        L10n.locale.localizedString(forIdentifier: identifier) ?? identifier
+        let full = L10n.locale.localizedString(forIdentifier: identifier) ?? identifier
+        guard isCompact else { return full }
+        // "Englisch (Vereinigte Staaten)" would eat the whole capsule on a phone.
+        let shortened = full.replacingOccurrences(
+            of: #"\s*\([^)]*\)"#,
+            with: "",
+            options: .regularExpression
+        )
+        return shortened.isEmpty ? full : shortened
     }
 
     private func languageMenu(
@@ -222,14 +244,15 @@ struct LanguageMenu: View {
             .pickerStyle(.inline)
         } label: {
             Text(label)
-                .font(.subheadline)
-                .lineLimit(1)
+                .font(isCompact ? .footnote : .subheadline)
+                .lineLimit(isCompact ? 2 : 1)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
-        .fixedSize()
     }
 }
 

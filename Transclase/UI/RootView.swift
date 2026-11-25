@@ -296,6 +296,9 @@ struct EmptyStateView: View {
             VStack(spacing: 7) {
                 Text(L("点「新对话」开始一节课"))
                     .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 340)
                 Text(L("或者直接点下面的麦克风。声音只在本机处理。"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -307,6 +310,8 @@ struct EmptyStateView: View {
                 Label(L("演示模式：会播放一段模拟讲座"), systemImage: "play.rectangle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 340)
             } else if model.isBootstrapping {
                 ProgressView(L("正在检查本机语言能力…"))
                     .font(.caption)
@@ -322,15 +327,30 @@ struct EmptyStateView: View {
             HStack(spacing: 12) {
                 Button {
                     Task {
-                        if model.currentSession == nil { await model.newConversation() }
-                        await model.start()
+                        if model.needsDownloads {
+                            await model.prepareOfflinePack()
+                        } else {
+                            if model.currentSession == nil { await model.newConversation() }
+                            await model.start()
+                        }
                     }
                 } label: {
-                    Label(L("开始听课"), systemImage: "mic.fill")
-                        .padding(.horizontal, 6)
+                    Group {
+                        if model.isPreparingPack {
+                            Label(L("下载中…"), systemImage: "arrow.down.circle")
+                        } else if model.needsDownloads {
+                            Label(L("开始下载"), systemImage: "arrow.down.circle")
+                        } else {
+                            Label(L("开始听课"), systemImage: "mic.fill")
+                        }
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, 6)
                 }
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
+                .disabled(model.isPreparingPack)
 
                 Button {
                     Task { await model.playDemo() }

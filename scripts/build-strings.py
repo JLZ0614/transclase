@@ -13,6 +13,24 @@ SRC = ROOT / "translations/source.json"
 LANGS = ["en", "es", "fr", "de", "ja", "ko"]
 
 EXTRA = {
+    "开始下载": {"en": "Start download", "es": "Descargar", "fr": "Télécharger",
+                 "de": "Laden", "ja": "ダウンロード", "ko": "다운로드"},
+    "下载中…": {"en": "Downloading…", "es": "Descargando…", "fr": "Téléchargement…",
+                "de": "Wird geladen…", "ja": "ダウンロード中…", "ko": "다운로드 중…"},
+    "高质量翻译": {"en": "High-quality translation", "es": "Traducción de alta calidad",
+                   "fr": "Traduction de haute qualité", "de": "Übersetzung in hoher Qualität",
+                   "ja": "高品質翻訳", "ko": "고품질 번역"},
+    "测试 API 连接": {"en": "Test API connection", "es": "Probar conexión API",
+                      "fr": "Tester la connexion API", "de": "API-Verbindung testen",
+                      "ja": "API 接続をテスト", "ko": "API 연결 테스트"},
+    "翻译失败，点按重试": {"en": "Translation failed — tap to retry", "es": "Error de traducción: toca para reintentar",
+                          "fr": "Échec de la traduction — toucher pour réessayer",
+                          "de": "Übersetzung fehlgeschlagen – zum Wiederholen tippen",
+                          "ja": "翻訳に失敗 — タップで再試行", "ko": "번역 실패 — 탭하여 다시 시도"},
+    "翻译引擎尚未就绪": {"en": "Translation engine is not ready yet", "es": "El motor de traducción aún no está listo",
+                         "fr": "Le moteur de traduction n'est pas encore prêt",
+                         "de": "Die Übersetzungs-Engine ist noch nicht bereit",
+                         "ja": "翻訳エンジンの準備ができていません", "ko": "번역 엔진이 아직 준비되지 않았습니다"},
     "%d 段": {"en": "%d segments", "es": "%d segmentos", "fr": "%d segments",
               "de": "%d Abschnitte", "ja": "%d 段落", "ko": "%d개 구간"},
     "下载识别模型 %d%%": {

@@ -135,6 +135,12 @@
 "在访达中显示" = "Mostrar en Finder";
 "还没有课堂记录" = "Aún no hay clases grabadas";
 "麦克风音量" = "Volumen del micrófono";
+"开始下载" = "Descargar";
+"下载中…" = "Descargando…";
+"高质量翻译" = "Traducción de alta calidad";
+"测试 API 连接" = "Probar conexión API";
+"翻译失败，点按重试" = "Error de traducción: toca para reintentar";
+"翻译引擎尚未就绪" = "El motor de traducción aún no está listo";
 "%d 段" = "%d segmentos";
 "下载识别模型 %d%%" = "Descargando modelo %d%%";
 "上课时点「总结」，或打开自动总结（1–10 分钟）。" = "Pulsa Resumir durante la clase o activa el resumen automático (1–10 min).";

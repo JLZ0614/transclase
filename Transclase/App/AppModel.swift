@@ -122,6 +122,13 @@ final class AppModel: ObservableObject {
         return isSpeechModelInstalled && isTranslationPackInstalled
     }
 
+    /// True when a lecture cannot start offline yet: either the recognition
+    /// model or the translation pack is missing.
+    var needsDownloads: Bool {
+        guard !isDemoActive, !isBootstrapping else { return false }
+        return !isReadyOffline
+    }
+
     var speechLanguages: Set<String> { Set(speechOptions.map(\.id)) }
     var translationLanguages: Set<String> { Set(translationOptions.map(\.id)) }
 

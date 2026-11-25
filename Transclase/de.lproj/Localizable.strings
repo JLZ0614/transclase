@@ -135,6 +135,12 @@
 "在访达中显示" = "Im Finder zeigen";
 "还没有课堂记录" = "Noch keine Aufzeichnungen";
 "麦克风音量" = "Mikrofonlautstärke";
+"开始下载" = "Laden";
+"下载中…" = "Wird geladen…";
+"高质量翻译" = "Übersetzung in hoher Qualität";
+"测试 API 连接" = "API-Verbindung testen";
+"翻译失败，点按重试" = "Übersetzung fehlgeschlagen – zum Wiederholen tippen";
+"翻译引擎尚未就绪" = "Die Übersetzungs-Engine ist noch nicht bereit";
 "%d 段" = "%d Abschnitte";
 "下载识别模型 %d%%" = "Sprachmodell wird geladen %d%%";
 "上课时点「总结」，或打开自动总结（1–10 分钟）。" = "Tippe während der Vorlesung auf Zusammenfassen oder aktiviere die automatische Zusammenfassung (1–10 Min.).";
