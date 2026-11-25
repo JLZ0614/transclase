@@ -189,7 +189,6 @@ struct SettingsSheet: View {
 
                 SecureField("API Key", text: $keyDraft)
                     .textFieldStyle(.roundedBorder)
-                    .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
 
                 if let provider = model.activeProvider {
