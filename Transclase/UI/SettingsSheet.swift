@@ -146,15 +146,6 @@ struct SettingsSheet: View {
             }
             .disabled(model.isRunning)
 
-            #if os(iOS)
-            Button {
-                model.openSystemTranslationSettings()
-            } label: {
-                Label(L("在设置中管理语言"), systemImage: "gearshape")
-            }
-            .disabled(model.isRunning)
-            #endif
-
             NavigationLink {
                 ModelManagerView().environmentObject(model)
             } label: {
