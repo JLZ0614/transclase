@@ -229,6 +229,17 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// iOS has no public deep link to the Translate language list, so the best
+    /// we can do is open this app's page in Settings; the note tells the user
+    /// where to go from there.
+    func openSystemTranslationSettings() {
+        #if os(iOS)
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+        translationNote = L("往下找「翻译语言」，添加需要的语言；系统「翻译」App 里已下载的会自动同步。")
+        #endif
+    }
+
     /// Called by the `.translationTask` modifier. Apple only hands out sessions
     /// here that are allowed to trigger a language-pack download, so the
     /// translation engine asks the model for a session instead of creating one.

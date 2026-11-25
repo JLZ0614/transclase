@@ -39,6 +39,9 @@ struct SettingsSheet: View {
             }
             .formStyle(.grouped)
             .navigationTitle(L("设置"))
+            // Packs downloaded in the system Translate app show up here without
+            // restarting the session.
+            .task { await model.refreshLanguagePackStatus() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L("完成")) { dismiss() }
@@ -142,6 +145,15 @@ struct SettingsSheet: View {
                 Label(L("下载 / 刷新离线语言包"), systemImage: "arrow.down.circle")
             }
             .disabled(model.isRunning)
+
+            #if os(iOS)
+            Button {
+                model.openSystemTranslationSettings()
+            } label: {
+                Label(L("在设置中管理语言"), systemImage: "gearshape")
+            }
+            .disabled(model.isRunning)
+            #endif
 
             NavigationLink {
                 ModelManagerView().environmentObject(model)
