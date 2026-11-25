@@ -84,9 +84,7 @@ struct SidebarView: View {
 
     private var header: some View {
         HStack(spacing: 9) {
-            Image(systemName: "waveform")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.tint)
+            BrandGlyph(size: 18)
             Text("Transclase")
                 .font(.headline)
             Spacer()
