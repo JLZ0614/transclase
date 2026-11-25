@@ -10,13 +10,95 @@ struct RootView: View {
 
     var body: some View {
         #if os(iOS)
-        phoneBody
+        if isRegularWidth { tabletBody } else { phoneBody }
         #else
         desktopBody
         #endif
     }
 
     #if os(iOS)
+    private var isRegularWidth: Bool { sizeClass == .regular }
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// iPad: the transcript keeps the full width and the two side panels float
+    /// above it instead of pushing it into a narrow column.
+    private var tabletBody: some View {
+        ZStack {
+            AppBackdrop()
+
+            NavigationStack {
+                mainColumn
+                    .navigationTitle(model.currentSession?.displayName ?? "Transclase")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button(L("工作区")) {
+                                withAnimation(.snappy(duration: 0.22)) { showSessions.toggle() }
+                            }
+                        }
+                        ToolbarItemGroup(placement: .topBarTrailing) {
+                            Button {
+                                withAnimation(.snappy(duration: 0.22)) { showAssistant.toggle() }
+                            } label: { BrandGlyph(size: 22) }
+                            Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                        }
+                    }
+            }
+            .preferredColorScheme(model.settings.appearance.colorScheme)
+            .id(model.localizationToken)
+            .translationTask(model.translationConfiguration) { session in
+                model.adoptTranslationSession(session)
+            }
+            .task { await bootstrapOnce() }
+
+            if showSessions {
+                floatingPanel(width: 300, alignment: .leading, dismiss: { showSessions = false }) {
+                    SidebarView(showSettings: $showSettings, showsSettingsRow: false,
+                                supportsSelection: true, floating: true)
+                }
+            }
+
+            if showAssistant {
+                floatingPanel(width: 340, alignment: .trailing, dismiss: { showAssistant = false }) {
+                    AssistantPanel(showsTitle: false, translucent: true)
+                }
+            }
+        }
+        .sheet(isPresented: $showSettings) { SettingsSheet().environmentObject(model) }
+    }
+
+    /// Rounded card pinned to one side, with a tap-anywhere backdrop to close it.
+    private func floatingPanel<Content: View>(
+        width: CGFloat,
+        alignment: HorizontalAlignment,
+        dismiss: @escaping () -> Void,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ZStack {
+            Color.black.opacity(0.001)
+                .ignoresSafeArea()
+                .onTapGesture { withAnimation(.snappy(duration: 0.2)) { dismiss() } }
+
+            HStack(spacing: 0) {
+                if alignment == .trailing { Spacer(minLength: 0) }
+                content()
+                    .frame(width: width)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                    }
+                    .shadow(color: .black.opacity(0.18), radius: 24, y: 8)
+                    .padding(16)
+                    .transition(.move(edge: alignment == .leading ? .leading : .trailing)
+                        .combined(with: .opacity))
+                if alignment == .leading { Spacer(minLength: 0) }
+            }
+        }
+        .environmentObject(model)
+    }
+
     /// iPhone: a single column with the workspace, assistant and settings behind
     /// sheets, because three panes do not fit.
     private var phoneBody: some View {
@@ -52,7 +134,8 @@ struct RootView: View {
             }
             .sheet(isPresented: $showSessions) {
                 NavigationStack {
-                    SidebarView(showSettings: $showSettings, showsSettingsRow: false, supportsSelection: true)
+                    SidebarView(showSettings: $showSettings, showsSettingsRow: false,
+                                supportsSelection: true, floating: true)
                         .toolbar { ToolbarItem(placement: .topBarTrailing) {
                             Button(L("完成")) { showSessions = false }
                         } }

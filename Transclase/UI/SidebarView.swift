@@ -8,6 +8,8 @@ struct SidebarView: View {
     var showsSettingsRow: Bool = true
     /// iPhone gets tap-to-open plus long-press / double-tap multi-selection.
     var supportsSelection: Bool = false
+    /// When shown as a floating card the panel provides its own material.
+    var floating: Bool = false
 
     @State private var isSelecting = false
     @State private var selected: Set<String> = []
@@ -70,13 +72,17 @@ struct SidebarView: View {
             }
         }
         .background {
-            // A touch of transparent black, not a grey plate.
-            Color.black.opacity(colorScheme == .dark ? 0.38 : 0.06)
+            if !floating {
+                // A touch of transparent black, not a grey plate.
+                Color.black.opacity(colorScheme == .dark ? 0.38 : 0.06)
+            }
         }
         .overlay(alignment: .trailing) {
-            Rectangle()
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.10))
-                .frame(width: 1)
+            if !floating {
+                Rectangle()
+                    .fill(Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.10))
+                    .frame(width: 1)
+            }
         }
     }
 
