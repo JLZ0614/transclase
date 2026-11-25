@@ -5,6 +5,8 @@ struct SettingsSheet: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
+    @State private var isTesting = false
+    @State private var testResult: String?
     @State private var keyDraft = ""
     @State private var needsRelaunch = false
 
@@ -187,6 +189,30 @@ struct SettingsSheet: View {
 
                 SecureField("API Key", text: $keyDraft)
                     .textFieldStyle(.roundedBorder)
+
+                Button {
+                    testResult = nil
+                    isTesting = true
+                    Task {
+                        testResult = await model.testProviderConnection()
+                        isTesting = false
+                    }
+                } label: {
+                    HStack {
+                        Text(L("测试 API 连接"))
+                        Spacer()
+                        if isTesting {
+                            ProgressView().controlSize(.mini)
+                        }
+                    }
+                }
+                .disabled(isTesting)
+
+                if let testResult {
+                    Text(testResult)
+                        .font(.caption)
+                        .foregroundStyle(testResult.hasPrefix(L("连接成功")) ? AnyShapeStyle(.green) : AnyShapeStyle(.red))
+                }
 
                 HStack {
                     Button {

@@ -559,6 +559,40 @@ final class AppModel: ObservableObject {
         SessionStore.read(session)
     }
 
+    /// Runs a model-list request so the settings screen can report the exact
+    /// failure instead of a generic "连接失败".
+    func testProviderConnection() async -> String {
+        guard let provider = activeProvider else { return L("未选择服务商") }
+        guard let url = URL(string: provider.baseURL), let scheme = url.scheme else {
+            return L("地址格式不对，需要以 https:// 开头")
+        }
+        // iOS only allows cleartext HTTP to the local network; every other
+        // plain-http endpoint is blocked by ATS before a socket is opened.
+        if scheme == "http", let host = url.host, !Self.isLocalHost(host) {
+            return L("iOS 只允许 https，或局域网地址的 http")
+        }
+        let key = CredentialStore.load("provider.\(provider.id.uuidString)") ?? ""
+        guard !key.isEmpty else { return L("还没有填写 API Key") }
+
+        do {
+            let ids = try await LLMClient(baseURL: url, model: provider.model, apiKey: key)
+                .listModels(timeout: 12)
+            return String(format: NSLocalizedString("连接成功，可用模型 %d 个", comment: ""), ids.count)
+        } catch {
+            return (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private static func isLocalHost(_ host: String) -> Bool {
+        if host == "localhost" || host.hasSuffix(".local") { return true }
+        let parts = host.split(separator: ".").compactMap { Int($0) }
+        guard parts.count == 4 else { return false }
+        return parts[0] == 10
+            || (parts[0] == 192 && parts[1] == 168)
+            || (parts[0] == 172 && (16...31).contains(parts[1]))
+            || parts[0] == 127
+    }
+
     func openInFinder(_ session: LectureSession) {
         #if os(macOS)
         NSWorkspace.shared.activateFileViewerSelecting([session.url])
