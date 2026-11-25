@@ -71,11 +71,25 @@ final class OpenAICompatibleEngine: MTEngine {
         let cleaned = Self.clean(content)
         guard !cleaned.isEmpty else { throw MTError.failed(L("模型返回空结果")) }
 
-        historyLock.lock()
-        history.append((text, cleaned))
-        if history.count > 2 { history.removeFirst(history.count - 2) }
-        historyLock.unlock()
+        recordHistory(text, cleaned)
         return cleaned
+    }
+
+    // MARK: - History
+
+    /// Locking lives in a synchronous helper: calling `NSLock.lock()` directly
+    /// after an `await` is a Swift 6 error.
+    private func recordHistory(_ source: String, _ target: String) {
+        historyLock.lock()
+        defer { historyLock.unlock() }
+        history.append((source, target))
+        if history.count > 2 { history.removeFirst(history.count - 2) }
+    }
+
+    private func historySnapshot() -> [(source: String, target: String)] {
+        historyLock.lock()
+        defer { historyLock.unlock() }
+        return history
     }
 
     // MARK: - Prompts
@@ -92,10 +106,7 @@ final class OpenAICompatibleEngine: MTEngine {
     }
 
     private func userPrompt(for text: String) -> String {
-        historyLock.lock()
-        let snapshot = history
-        historyLock.unlock()
-
+        let snapshot = historySnapshot()
         guard !snapshot.isEmpty else { return text }
         let context = snapshot
             .map { "\($0.source)\n→ \($0.target)" }
