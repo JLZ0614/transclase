@@ -23,6 +23,8 @@ final class AppleTranslationEngine: MTEngine {
         self.sessionProvider = sessionProvider
     }
 
+    var supportsConcurrentRequests: Bool { false }
+
     func prepare() async throws {
         let availability = LanguageAvailability()
         let status = await availability.status(from: source, to: target)

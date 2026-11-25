@@ -33,7 +33,7 @@ final class CaptionPipeline {
     /// fall behind the lecturer whenever the cloud took more than ~2s.
     private var activeTranslations = 0
     private var translationQueue: [(id: String, text: String)] = []
-    private let maxParallelTranslations = 2
+    private var maxParallelTranslations = 1
 
     private var pendingFinalTranslations = 0
 
@@ -392,7 +392,13 @@ final class CaptionPipeline {
     // MARK: - Translation
 
     private func translateFinal(id: String, text: String, start: TimeInterval, end: TimeInterval) {
-        guard translationEnabled, mt != nil else { return }
+        guard translationEnabled else { return }
+        guard mt != nil else {
+            // Engine swapped or stopped mid-sentence: surface it instead of
+            // leaving a row that silently shows only the source.
+            failTranslation(id: id, text: text, message: L("翻译引擎尚未就绪"))
+            return
+        }
         pendingFinalTranslations += 1
         translationQueue.append((id: id, text: text))
         drainTranslations()
@@ -400,7 +406,10 @@ final class CaptionPipeline {
 
     /// Starts as many queued translations as the concurrency budget allows.
     private func drainTranslations() {
-        while activeTranslations < maxParallelTranslations,
+        // Apple's engine must stay strictly serial; the cloud one benefits from
+        // a second request in flight while the first is on the wire.
+        let limit = mt?.supportsConcurrentRequests == true ? 2 : 1
+        while activeTranslations < limit,
               !translationQueue.isEmpty,
               let mt {
             let job = translationQueue.removeFirst()

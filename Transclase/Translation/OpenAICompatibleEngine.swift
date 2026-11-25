@@ -29,6 +29,8 @@ final class OpenAICompatibleEngine: MTEngine {
         self.session = URLSession(configuration: config)
     }
 
+    var supportsConcurrentRequests: Bool { true }
+
     // MARK: - MTEngine
 
     func prepare() async throws {

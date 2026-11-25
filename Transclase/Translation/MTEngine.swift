@@ -25,4 +25,12 @@ enum MTError: LocalizedError {
 protocol MTEngine: AnyObject {
     func prepare() async throws
     func translate(_ text: String) async throws -> String
+
+    /// Apple's `TranslationSession` supports one request at a time; sending two
+    /// makes the second one fail silently. Remote engines can be parallel.
+    var supportsConcurrentRequests: Bool { get }
+}
+
+extension MTEngine {
+    var supportsConcurrentRequests: Bool { false }
 }
