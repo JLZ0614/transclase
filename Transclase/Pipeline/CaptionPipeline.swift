@@ -419,8 +419,13 @@ final class CaptionPipeline {
                 var translated: String?
                 var failure: String?
                 do {
-                    let raw = try await mt.translate(job.text)
-                    translated = ChineseVariant.normalized(raw, for: self?.settings.targetLanguageID ?? "zh-Hans")
+                    let target = self?.settings.targetLanguageID ?? "zh-Hans"
+                    var pieces: [String] = []
+                    for chunk in Self.chunks(of: job.text) {
+                        let raw = try await mt.translate(chunk)
+                        pieces.append(ChineseVariant.normalized(raw, for: target))
+                    }
+                    translated = Self.join(pieces, for: target)
                 } catch {
                     failure = error.localizedDescription
                 }
@@ -451,6 +456,33 @@ final class CaptionPipeline {
             start: captions[index].start,
             end: captions[index].end
         )
+    }
+
+    /// Apple's on-device translator stalls or returns nothing for very long
+    /// input, so long sentences are translated in pieces.
+    private static let maxChunk = 140
+
+    static func chunks(of text: String) -> [String] {
+        guard text.count > maxChunk else { return [text] }
+        var remaining = Substring(text)
+        var out: [String] = []
+        while remaining.count > maxChunk {
+            let window = remaining.prefix(maxChunk)
+            let boundary = window.lastIndex { "。！？.!?，,；;、 ".contains($0) }
+            let cut = boundary.map { remaining.index(after: $0) } ?? window.endIndex
+            let piece = remaining[remaining.startIndex..<cut].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !piece.isEmpty { out.append(piece) }
+            remaining = remaining[cut...]
+        }
+        let tail = remaining.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !tail.isEmpty { out.append(tail) }
+        return out.isEmpty ? [text] : out
+    }
+
+    private static func join(_ pieces: [String], for target: String) -> String {
+        let lower = target.lowercased()
+        let cjk = lower.hasPrefix("zh") || lower.hasPrefix("ja") || lower.hasPrefix("ko")
+        return pieces.joined(separator: cjk ? "" : " ")
     }
 
     private func finishTranslation(id: String, text: String, translated: String) {

@@ -38,6 +38,6 @@ enum SentenceRules {
     /// Sentences longer than this are flushed even without a boundary, so the
     /// reader never waits through a whole monologue.
     static func tooLong(_ text: String) -> Bool {
-        text.count > 220
+        text.count > 150
     }
 }
