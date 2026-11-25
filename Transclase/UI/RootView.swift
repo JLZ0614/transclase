@@ -98,7 +98,7 @@ struct RootView: View {
                 Button {
                     withAnimation(.snappy(duration: 0.2)) { showAssistant.toggle() }
                 } label: {
-                    Image(systemName: "sidebar.right")
+                    BrandGlyph(size: 17)
                 }
                 .help(L("翻译助手"))
             }
