@@ -579,7 +579,9 @@ final class AppModel: ObservableObject {
                 .listModels(timeout: 12)
             return String(format: NSLocalizedString("连接成功，可用模型 %d 个", comment: ""), ids.count)
         } catch {
-            return (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            // The URL matters: a wrong host produces a 401 from the wrong service.
+            return "\(url.absoluteString)\n\(detail)"
         }
     }
 

@@ -14,7 +14,7 @@ struct LLMClient {
 
         var errorDescription: String? {
             switch self {
-            case .badStatus(let code, let body): return "HTTP \(code) \(body.prefix(120))"
+            case .badStatus(let code, let body): return "HTTP \(code) \(body.prefix(240))"
             case .malformed: return L("返回格式无法解析")
             case .empty: return L("模型返回空结果")
             }
