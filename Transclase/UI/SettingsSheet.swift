@@ -189,6 +189,15 @@ struct SettingsSheet: View {
 
                 SecureField("API Key", text: $keyDraft)
                     .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                if let provider = model.activeProvider {
+                    Text(String(format: NSLocalizedString("已保存：%@", comment: ""),
+                                model.providerKeyFingerprint(provider)))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
 
                 Button {
                     testResult = nil

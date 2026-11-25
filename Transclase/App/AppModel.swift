@@ -636,7 +636,19 @@ final class AppModel: ObservableObject {
     }
 
     func saveProviderKey(_ provider: ModelProvider, key: String) {
-        CredentialStore.save(key, for: "provider.\(provider.id.uuidString)")
+        // Keys are pasted from a browser; a trailing newline makes the server
+        // answer 401 even though the key itself is fine.
+        let cleaned = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        CredentialStore.save(cleaned, for: "provider.\(provider.id.uuidString)")
+    }
+
+    /// Masked fingerprint of the stored key, so the phone can be compared with
+    /// the Mac without revealing it.
+    func providerKeyFingerprint(_ provider: ModelProvider) -> String {
+        guard let key = providerKey(provider), !key.isEmpty else { return L("未保存") }
+        let prefix = key.prefix(6)
+        let suffix = key.suffix(4)
+        return "\(prefix)…\(suffix) · \(key.count) 位"
     }
 
     private func assistantClient() -> LLMClient? {
