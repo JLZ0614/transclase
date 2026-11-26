@@ -51,12 +51,12 @@ struct AppBackdrop: View {
 
 /// Five-bar input meter, in the spirit of Voice Memos.
 struct LevelBars: View {
-    let level: Float
+    @ObservedObject var meter: AudioLevelMeter
     var height: CGFloat = 20
     private let weights: [CGFloat] = [0.55, 0.95, 0.75, 1.0, 0.6]
 
     var body: some View {
-        let amplitude = CGFloat(min(max(level, 0), 1))
+        let amplitude = CGFloat(min(max(meter.level, 0), 1))
         HStack(alignment: .center, spacing: 2) {
             ForEach(Array(weights.enumerated()), id: \.offset) { _, weight in
                 Capsule()
@@ -65,7 +65,7 @@ struct LevelBars: View {
             }
         }
         .frame(width: 20, height: height)
-        .animation(.easeOut(duration: 0.1), value: level)
+        .animation(.easeOut(duration: 0.1), value: meter.level)
         .accessibilityLabel(L("麦克风音量"))
     }
 }

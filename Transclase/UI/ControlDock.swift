@@ -75,7 +75,7 @@ struct ControlDock: View {
         HStack(spacing: 9) {
             LanguageMenu()
 
-            LevelBars(level: model.level, height: 13)
+            LevelBars(meter: model.meter, height: 13)
 
             Text(statusLine)
                 .font(.caption2)

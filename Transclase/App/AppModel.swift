@@ -14,6 +14,14 @@ struct SharePayload: Identifiable {
     let url: URL
 }
 
+/// Audio level lives in its own object: publishing it on `AppModel` made the
+/// whole view tree re-evaluate ~16 times a second, which is what made the
+/// record button feel unresponsive.
+@MainActor
+final class AudioLevelMeter: ObservableObject {
+    @Published var level: Float = 0
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     @Published var settings: AppSettings
@@ -22,7 +30,7 @@ final class AppModel: ObservableObject {
     @Published var isPreparing = false
     @Published var statusText = L("就绪")
     @Published var errorMessage: String?
-    @Published var level: Float = 0
+    let meter = AudioLevelMeter()
     private var lastLevelAt = Date.distantPast
     @Published var scrollGeneration = 0
     @Published var isPinnedToBottom = true
@@ -93,10 +101,10 @@ final class AppModel: ObservableObject {
             // The tap fires ~20 times a second; republishing every value made the
             // whole dock (and the share payload) re-evaluate constantly.
             let now = Date()
-            guard level != self.level,
+            guard self.meter.level != level,
                   now.timeIntervalSince(self.lastLevelAt) > 0.06 else { return }
             self.lastLevelAt = now
-            self.level = level
+            self.meter.level = level
         }
         pipeline.onTranslationEngine = { [weak self] label in
             self?.translationEngineLabel = label
@@ -448,7 +456,7 @@ final class AppModel: ObservableObject {
         // take a second on a phone, and the button must react immediately.
         isRunning = false
         setScreenAwake(false)
-        level = 0
+        meter.level = 0
         transientDemo = false
         stopSummaryTimer()
 
