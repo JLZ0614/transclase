@@ -29,20 +29,7 @@ struct ControlDock: View {
                 // counter lives in the session menu instead.
                 Spacer(minLength: 2)
 
-                Button {
-                    model.exportCurrentSession()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .frame(width: 32, height: 32)
-                        .background(Color.primary.opacity(0.06), in: .circle)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(model.captionCount == 0)
-                .opacity(model.captionCount == 0 ? 0.35 : 1)
-                .accessibilityLabel(L("导出逐字稿"))
+                shareButton
 
                 SessionMenu()
             }
@@ -90,15 +77,7 @@ struct ControlDock: View {
 
             StartStopButton()
 
-            Button {
-                model.exportCurrentSession()
-            } label: {
-                DockIcon(systemName: "square.and.arrow.up")
-            }
-            .buttonStyle(.plain)
-            .disabled(model.captionCount == 0)
-            .opacity(model.captionCount == 0 ? 0.35 : 1)
-            .accessibilityLabel(L("导出逐字稿"))
+            shareButton
 
             SessionMenu()
         }
@@ -108,6 +87,32 @@ struct ControlDock: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
         .frame(maxWidth: .infinity)
         .padding(.bottom, 6)
+    }
+
+    /// macOS shares through the system menu; iOS exports (and shares) the file.
+    @ViewBuilder
+    private var shareButton: some View {
+        #if os(macOS)
+        if let url = model.shareFileURL {
+            ShareLink(item: url) {
+                DockIcon(systemName: "square.and.arrow.up")
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("分享"))
+        } else {
+            DockIcon(systemName: "square.and.arrow.up").opacity(0.35)
+        }
+        #else
+        Button {
+            model.exportCurrentSession()
+        } label: {
+            DockIcon(systemName: "square.and.arrow.up")
+        }
+        .buttonStyle(.plain)
+        .disabled(model.captionCount == 0)
+        .opacity(model.captionCount == 0 ? 0.35 : 1)
+        .accessibilityLabel(L("导出逐字稿"))
+        #endif
     }
 
     /// One-line status used by both layouts.
