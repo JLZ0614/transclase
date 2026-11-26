@@ -30,15 +30,19 @@ struct ControlDock: View {
                 Spacer(minLength: 2)
 
                 Button {
-                    if let session = model.currentSession {
-                        model.requestExport(of: session, sourceOnly: false)
-                    }
+                    model.exportCurrentSession()
                 } label: {
-                    DockIcon(systemName: "square.and.arrow.up")
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.primary.opacity(0.06), in: .circle)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .disabled(model.captions.isEmpty)
                 .opacity(model.captions.isEmpty ? 0.35 : 1)
+                .accessibilityLabel(L("导出逐字稿"))
 
                 SessionMenu()
             }
@@ -84,9 +88,7 @@ struct ControlDock: View {
             StartStopButton()
 
             Button {
-                if let session = model.currentSession {
-                    model.requestExport(of: session, sourceOnly: false)
-                }
+                model.exportCurrentSession()
             } label: {
                 DockIcon(systemName: "square.and.arrow.up")
             }
@@ -273,22 +275,16 @@ struct SessionMenu: View {
             }
 
             Button {
-                if let session = model.currentSession {
-                    model.requestExport(of: session, sourceOnly: false)
-                }
+                model.exportCurrentSession()
             } label: {
                 Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
             }
-            .disabled(model.currentSession == nil)
 
             Button {
-                if let session = model.currentSession {
-                    model.requestExport(of: session, sourceOnly: true)
-                }
+                model.exportCurrentSession(sourceOnly: true)
             } label: {
                 Label(L("导出纯语音文本"), systemImage: "text.alignleft")
             }
-            .disabled(model.currentSession == nil)
 
             Divider()
 

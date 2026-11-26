@@ -597,6 +597,13 @@ final class AppModel: ObservableObject {
         return (session.url, url)
     }
 
+    /// The share button in the dock maps straight to "export everything".
+    func exportCurrentSession(sourceOnly: Bool = false) {
+        if currentSession == nil { currentSession = SessionStore.create() }
+        guard let session = currentSession else { return }
+        requestExport(of: session, sourceOnly: sourceOnly)
+    }
+
     /// Builds the export on demand (only when the user actually taps).
     func requestExport(of session: LectureSession, sourceOnly: Bool) {
         guard let files = exportFiles(for: session) else { return }
