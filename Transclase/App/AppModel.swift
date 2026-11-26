@@ -31,6 +31,8 @@ final class AppModel: ObservableObject {
     @Published var translationNote: String?
     @Published var translationEngineLabel = "—"
     @Published var languagePackStatus = L("未知")
+    /// Strategy the Translation framework actually handed us.
+    @Published var effectiveTranslationStrategy = L("未知")
     @Published var pendingClearConfirmation = false
     @Published var speechProgress: Double?
     @Published var isPreparingPack = false
@@ -265,6 +267,13 @@ final class AppModel: ObservableObject {
     /// translation engine asks the model for a session instead of creating one.
     func adoptTranslationSession(_ session: TranslationSession) {
         translationSession = session
+        // What the framework actually granted, which may differ from the request.
+        if #available(iOS 26.4, macOS 26.4, *) {
+            effectiveTranslationStrategy = session.preferredStrategy == .highFidelity
+                ? L("高质量") : L("低延迟")
+        } else {
+            effectiveTranslationStrategy = L("低延迟")
+        }
         Task { [weak self] in
             guard let self else { return }
             do {
