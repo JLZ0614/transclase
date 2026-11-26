@@ -11,6 +11,13 @@ struct LectureSession: Identifiable, Hashable {
     var displayName: String { id.replacingOccurrences(of: "-", with: " ") }
 }
 
+/// A directory inside the workspace; may contain further folders and lectures.
+struct WorkspaceFolder: Identifiable, Hashable {
+    let id: String
+    let url: URL
+    let createdAt: Date
+}
+
 enum SessionStore {
     static var directory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -21,7 +28,7 @@ enum SessionStore {
     private static var formatter: DateFormatter {
         let f = DateFormatter()
         f.locale = L10n.locale
-        f.dateFormat = "EEE-MM-dd"
+        f.dateFormat = "EEE-MM-dd-HHmm"
         return f
     }
 
@@ -29,7 +36,8 @@ enum SessionStore {
         formatter.string(from: date).replacingOccurrences(of: " ", with: "-")
     }
 
-    static func create(at date: Date = Date()) -> LectureSession {
+    static func create(at date: Date = Date(), in folder: URL? = nil) -> LectureSession {
+        let directory = folder ?? self.directory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var name = fileName(for: date)
         var url = directory.appendingPathComponent("\(name).md")
@@ -58,6 +66,80 @@ enum SessionStore {
             .filter { $0.hasPrefix("> ") }
             .map { String($0.dropFirst(2)) }
             .joined(separator: "\n")
+    }
+
+    /// Folders and files inside one directory, folders first.
+    static func contents(of folder: URL) -> (folders: [WorkspaceFolder], files: [LectureSession]) {
+        let fm = FileManager.default
+        let keys: [URLResourceKey] = [.isDirectoryKey, .creationDateKey]
+        let items = (try? fm.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles]
+        )) ?? []
+
+        var folders: [WorkspaceFolder] = []
+        var files: [LectureSession] = []
+        for url in items {
+            let values = try? url.resourceValues(forKeys: Set(keys))
+            if values?.isDirectory == true {
+                folders.append(WorkspaceFolder(
+                    id: url.lastPathComponent,
+                    url: url,
+                    createdAt: values?.creationDate ?? Date()
+                ))
+            } else if url.pathExtension == "md" || url.pathExtension == "txt" {
+                files.append(LectureSession(
+                    id: url.deletingPathExtension().lastPathComponent,
+                    url: url,
+                    createdAt: values?.creationDate ?? Date()
+                ))
+            }
+        }
+        folders.sort { $0.id.localizedStandardCompare($1.id) == .orderedAscending }
+        files.sort { $0.createdAt > $1.createdAt }
+        return (folders, files)
+    }
+
+    @discardableResult
+    static func createFolder(named name: String, in parent: URL) -> URL? {
+        let fm = FileManager.default
+        try? fm.createDirectory(at: parent, withIntermediateDirectories: true)
+        var candidate = parent.appendingPathComponent(name, isDirectory: true)
+        var suffix = 2
+        while fm.fileExists(atPath: candidate.path) {
+            candidate = parent.appendingPathComponent("\(name) \(suffix)", isDirectory: true)
+            suffix += 1
+        }
+        do {
+            try fm.createDirectory(at: candidate, withIntermediateDirectories: true)
+            return candidate
+        } catch {
+            return nil
+        }
+    }
+
+    /// Renames a file or folder, keeping the extension for files.
+    @discardableResult
+    static func rename(_ url: URL, to newName: String) -> URL? {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+        let target = url.deletingLastPathComponent()
+            .appendingPathComponent(isDirectory ? trimmed : "\(trimmed).\(url.pathExtension)")
+        guard target.path != url.path else { return url }
+        do {
+            try FileManager.default.moveItem(at: url, to: target)
+            return target
+        } catch {
+            return nil
+        }
+    }
+
+    static func delete(_ urls: [URL]) {
+        for url in urls {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     static func list() -> [LectureSession] {

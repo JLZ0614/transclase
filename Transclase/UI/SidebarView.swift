@@ -6,48 +6,33 @@ struct SidebarView: View {
     @Binding var showSettings: Bool
     /// On iPhone the toolbar already has a gear, so the row would duplicate it.
     var showsSettingsRow: Bool = true
-    /// iPhone gets tap-to-open plus long-press / double-tap multi-selection.
-    var supportsSelection: Bool = false
+    /// Unused on iPad/phone now; kept so call sites stay readable.
+    var supportsSelection: Bool = true
     /// When shown as a floating card the panel provides its own material.
     var floating: Bool = false
 
     @State private var isSelecting = false
     @State private var selected: Set<String> = []
+    @State private var renamingURL: URL?
+    @State private var renameDraft = ""
+    @State private var showNewFolder = false
+    @State private var newFolderName = ""
 
     var body: some View {
         VStack(spacing: 0) {
             header
             newConversationButton
-
-            HStack(spacing: 4) {
-                Text(isSelecting ? L("已选 %d 项").replacingOccurrences(of: "%d", with: "\(selected.count)") : L("工作区"))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if isSelecting {
-                    Button(L("完成")) { endSelection() }
-                        .font(.subheadline)
-                } else {
-                    Button {
-                        model.refreshSessions()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 18)
-            .padding(.bottom, 6)
+            workspaceHeader
 
             ScrollView {
                 LazyVStack(spacing: 2) {
-                    ForEach(model.sessions) { session in
-                        row(for: session)
+                    ForEach(model.folders) { folder in
+                        folderRow(folder)
                     }
-                    if model.sessions.isEmpty {
+                    ForEach(model.sessions) { session in
+                        sessionRow(session)
+                    }
+                    if model.folders.isEmpty, model.sessions.isEmpty {
                         Text(L("还没有课堂记录"))
                             .font(.callout)
                             .foregroundStyle(.tertiary)
@@ -60,28 +45,20 @@ struct SidebarView: View {
 
             if isSelecting {
                 selectionBar
-            } else {
+            } else if showsSettingsRow {
                 Spacer(minLength: 0)
-                if showsSettingsRow {
-                    Divider()
-                    VStack(spacing: 1) {
-                        SidebarItem(icon: "slider.horizontal.3", title: L("设置")) { showSettings = true }
-                    }
-                    .padding(8)
+                Divider()
+                VStack(spacing: 1) {
+                    SidebarItem(icon: "slider.horizontal.3", title: L("设置")) { showSettings = true }
                 }
+                .padding(8)
             }
         }
         .background {
             if !floating {
-                // A touch of transparent black, not a grey plate.
                 Color.black.opacity(colorScheme == .dark ? 0.38 : 0.06)
             }
         }
-        #if os(iOS)
-        .sheet(item: $model.pendingShare) { payload in
-            ShareSheet(items: [payload.url])
-        }
-        #endif
         .overlay(alignment: .trailing) {
             if !floating {
                 Rectangle()
@@ -89,9 +66,34 @@ struct SidebarView: View {
                     .frame(width: 1)
             }
         }
+        #if os(iOS)
+        .sheet(item: $model.pendingShare) { payload in
+            ShareSheet(items: [payload.url])
+        }
+        #endif
+        .alert(L("重命名"), isPresented: Binding(
+            get: { renamingURL != nil },
+            set: { if !$0 { renamingURL = nil } }
+        )) {
+            TextField(L("名称"), text: $renameDraft)
+            Button(L("取消"), role: .cancel) { renamingURL = nil }
+            Button(L("确定")) {
+                if let url = renamingURL { model.renameItem(url, to: renameDraft) }
+                renamingURL = nil
+            }
+        }
+        .alert(L("新建文件夹"), isPresented: $showNewFolder) {
+            TextField(L("名称"), text: $newFolderName)
+            Button(L("取消"), role: .cancel) { newFolderName = "" }
+            Button(L("创建")) {
+                _ = model.newFolder(named: newFolderName)
+                newFolderName = ""
+                model.refreshSessions()
+            }
+        }
     }
 
-    // MARK: - Pieces
+    // MARK: - Header
 
     private var header: some View {
         HStack(spacing: 9) {
@@ -125,8 +127,117 @@ struct SidebarView: View {
         .padding(.horizontal, 12)
     }
 
+    private var workspaceHeader: some View {
+        HStack(spacing: 6) {
+            if !model.workspacePath.isEmpty {
+                Button {
+                    model.goUp()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text(model.workspacePath.last ?? L("工作区"))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            Spacer()
+
+            if isSelecting {
+                Button(L("完成")) { endSelection() }
+                    .font(.subheadline)
+            } else {
+                Menu {
+                    Button {
+                        newFolderName = ""
+                        showNewFolder = true
+                    } label: {
+                        Label(L("新建文件夹"), systemImage: "folder.badge.plus")
+                    }
+                    Button {
+                        isSelecting = true
+                    } label: {
+                        Label(L("批量删除"), systemImage: "checkmark.circle")
+                    }
+                    Divider()
+                    Button {
+                        model.refreshSessions()
+                    } label: {
+                        Label(L("刷新"), systemImage: "arrow.clockwise")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                }
+                .menuIndicator(.hidden)
+                .buttonStyle(.plain)
+                .fixedSize()
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 18)
+        .padding(.bottom, 6)
+    }
+
+    // MARK: - Rows
+
     @ViewBuilder
-    private func row(for session: LectureSession) -> some View {
+    private func folderRow(_ folder: WorkspaceFolder) -> some View {
+        let isSelected = selected.contains(folder.id)
+        HStack(spacing: 10) {
+            if isSelecting {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 17))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+            } else {
+                Image(systemName: "folder")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+            }
+            Text(folder.id)
+                .font(.body)
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            if !isSelecting {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+        .background(isSelected ? Color.primary.opacity(0.07) : .clear, in: .rect(cornerRadius: 9))
+        .onTapGesture {
+            if isSelecting {
+                toggle(folder.id)
+            } else {
+                model.enter(folder)
+            }
+        }
+        .contextMenu {
+            Button { model.enter(folder) } label: { Label(L("打开"), systemImage: "folder") }
+            Button {
+                renamingURL = folder.url
+                renameDraft = folder.id
+            } label: {
+                Label(L("重命名"), systemImage: "pencil")
+            }
+            Divider()
+            Button(role: .destructive) {
+                model.deleteItems([folder.url])
+            } label: {
+                Label(L("删除"), systemImage: "trash")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sessionRow(_ session: LectureSession) -> some View {
         let isSelected = selected.contains(session.id)
         SessionRow(
             session: session,
@@ -134,18 +245,12 @@ struct SidebarView: View {
             isSelected: isSelecting ? isSelected : nil
         )
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) {
-            if supportsSelection { enterSelection(with: session) }
-        }
         .onTapGesture {
             if isSelecting {
-                toggle(session)
+                toggle(session.id)
             } else {
                 Task { await model.openSession(session) }
             }
-        }
-        .onLongPressGesture(minimumDuration: 0.45) {
-            if supportsSelection { enterSelection(with: session) }
         }
         .contextMenu {
             Button {
@@ -172,10 +277,17 @@ struct SidebarView: View {
                 Label(L("导出纯语音文本"), systemImage: "text.alignleft")
             }
 
+            Button {
+                renamingURL = session.url
+                renameDraft = session.id
+            } label: {
+                Label(L("重命名"), systemImage: "pencil")
+            }
+
             Divider()
 
             Button(role: .destructive) {
-                model.deleteSessions([session])
+                model.deleteItems([session.url])
             } label: {
                 Label(L("删除"), systemImage: "trash")
             }
@@ -190,67 +302,28 @@ struct SidebarView: View {
     private var selectionBar: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: 0) {
-                actionButton(icon: "doc.on.doc", title: L("复制")) { copySelected() }
-                ShareLink(items: selectedSessions.map(\.url)) {
-                    VStack(spacing: 4) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 17))
-                        Text(L("分享"))
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
+            HStack {
+                Text(String(format: NSLocalizedString("已选 %d 项", comment: ""), selected.count))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(role: .destructive) {
+                    deleteSelection()
+                } label: {
+                    Label(L("删除"), systemImage: "trash")
                 }
-                .buttonStyle(.plain)
                 .disabled(selected.isEmpty)
-                .opacity(selected.isEmpty ? 0.35 : 1)
-                actionButton(icon: "trash", title: L("删除"), role: .destructive) { deleteSelected() }
+                .buttonStyle(.borderless)
             }
+            .padding(.horizontal, 16)
             .padding(.vertical, 10)
         }
     }
 
-    private func actionButton(
-        icon: String,
-        title: String,
-        role: ButtonRole? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(role: role, action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 17))
-                Text(title)
-                    .font(.caption)
-            }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(selected.isEmpty)
-        .opacity(selected.isEmpty ? 0.35 : 1)
-    }
-
     // MARK: - Selection
 
-    private var selectedSessions: [LectureSession] {
-        model.sessions.filter { selected.contains($0.id) }
-    }
-
-    private func enterSelection(with session: LectureSession) {
-        guard supportsSelection else { return }
-        isSelecting = true
-        selected.insert(session.id)
-    }
-
-    private func toggle(_ session: LectureSession) {
-        if selected.contains(session.id) {
-            selected.remove(session.id)
-            if selected.isEmpty { isSelecting = false }
-        } else {
-            selected.insert(session.id)
-        }
+    private func toggle(_ id: String) {
+        if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
     }
 
     private func endSelection() {
@@ -258,18 +331,12 @@ struct SidebarView: View {
         selected.removeAll()
     }
 
-    private func copySelected() {
-        let text = selectedSessions
-            .map { model.markdown(for: $0) }
-            .joined(separator: "\n\n---\n\n")
-        Clipboard.copy(text)
+    private func deleteSelection() {
+        var urls: [URL] = []
+        urls += model.folders.filter { selected.contains($0.id) }.map(\.url)
+        urls += model.sessions.filter { selected.contains($0.id) }.map(\.url)
         endSelection()
-    }
-
-    private func deleteSelected() {
-        let victims = selectedSessions
-        endSelection()
-        model.deleteSessions(victims)
+        model.deleteItems(urls)
     }
 }
 
@@ -300,7 +367,7 @@ private struct SessionRow: View {
                     .foregroundStyle(isCurrent ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
             }
 
-            Text(session.displayName)
+            Text(session.id)
                 .font(.body)
                 .lineLimit(1)
 

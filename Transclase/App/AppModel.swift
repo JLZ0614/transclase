@@ -35,6 +35,9 @@ final class AppModel: ObservableObject {
     @Published var speechProgress: Double?
     @Published var isPreparingPack = false
     @Published var sessions: [LectureSession] = []
+    @Published var folders: [WorkspaceFolder] = []
+    /// Folder stack inside the workspace; empty means the root.
+    @Published var workspacePath: [String] = []
     @Published var currentSession: LectureSession?
     @Published var summaries: [SummaryBlock] = []
     /// Set when a file share/export is requested; the payload is built on tap.
@@ -541,8 +544,52 @@ final class AppModel: ObservableObject {
         SessionStore.append(body, to: session)
     }
 
+    var workspaceFolder: URL {
+        workspacePath.reduce(SessionStore.directory) { url, component in
+            url.appendingPathComponent(component, isDirectory: true)
+        }
+    }
+
     func refreshSessions() {
-        sessions = SessionStore.list()
+        let contents = SessionStore.contents(of: workspaceFolder)
+        folders = contents.folders
+        sessions = contents.files
+    }
+
+    func enter(_ folder: WorkspaceFolder) {
+        workspacePath.append(folder.id)
+        refreshSessions()
+    }
+
+    func goUp() {
+        guard !workspacePath.isEmpty else { return }
+        workspacePath.removeLast()
+        refreshSessions()
+    }
+
+    @discardableResult
+    func newFolder(named name: String) -> Bool {
+        SessionStore.createFolder(named: name, in: workspaceFolder) != nil
+    }
+
+    func renameItem(_ url: URL, to newName: String) {
+        guard SessionStore.rename(url, to: newName) != nil else { return }
+        refreshSessions()
+        if let current = currentSession, current.url == url {
+            currentSession = nil
+        }
+    }
+
+    func deleteItems(_ urls: [URL]) {
+        SessionStore.delete(urls)
+        if let current = currentSession, urls.contains(current.url) {
+            currentSession = nil
+            captions = []
+            summaries = []
+            chat = []
+            pipeline.clear()
+        }
+        refreshSessions()
     }
 
     /// Starts a new lecture: fresh captions, fresh markdown document.
@@ -552,7 +599,7 @@ final class AppModel: ObservableObject {
         if isRunning { await stop() }
         pipeline.clear()
 
-        let session = SessionStore.create()
+        let session = SessionStore.create(in: workspaceFolder)
         currentSession = session
         summaries = []
         chat = []
@@ -608,7 +655,7 @@ final class AppModel: ObservableObject {
 
     /// The share button in the dock maps straight to "export everything".
     func exportCurrentSession(sourceOnly: Bool = false) {
-        if currentSession == nil { currentSession = SessionStore.create() }
+        if currentSession == nil { currentSession = SessionStore.create(in: workspaceFolder) }
         guard let session = currentSession else { return }
         requestExport(of: session, sourceOnly: sourceOnly)
     }
