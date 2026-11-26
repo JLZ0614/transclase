@@ -55,6 +55,7 @@ struct ControlDock: View {
                     Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08),
                     lineWidth: 0.5
                 )
+                .allowsHitTesting(false)
             }
 
             StartStopButton()
@@ -64,7 +65,9 @@ struct ControlDock: View {
                         Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.08),
                         lineWidth: 0.5
                     )
+                    .allowsHitTesting(false)
                 }
+                .contentShape(Circle())
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
@@ -182,7 +185,7 @@ struct StartStopButton: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressScaleStyle())
         .disabled(model.isPreparing)
         .accessibilityLabel(model.isRunning ? L("停止") : (model.needsDownloads ? L("下载") : L("开始")))
     }
@@ -308,5 +311,17 @@ struct SessionMenu: View {
         .fixedSize()
         .disabled(model.captionCount == 0)
         .opacity(model.captionCount == 0 ? 0.35 : 1)
+    }
+}
+
+
+/// Immediate visual feedback on tap, so the button never feels dead while the
+/// audio engine is starting or stopping.
+struct PressScaleStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.88 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

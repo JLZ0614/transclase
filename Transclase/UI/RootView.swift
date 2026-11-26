@@ -380,7 +380,7 @@ struct RootView: View {
         model.refreshSessions()
         if AppModel.wantsSelfTest {
             await model.runSelfTest()
-        } else if AppModel.wantsDemo, model.captions.isEmpty {
+        } else if AppModel.wantsDemo, model.captionCount == 0 {
             await model.start()
         }
     }
