@@ -29,15 +29,16 @@ struct ControlDock: View {
                 // counter lives in the session menu instead.
                 Spacer(minLength: 2)
 
-                if let url = model.shareFileURL {
-                    ShareLink(item: url) {
-                        DockIcon(systemName: "square.and.arrow.up")
+                Button {
+                    if let session = model.currentSession {
+                        model.requestExport(of: session, sourceOnly: false)
                     }
-                    .buttonStyle(.plain)
-                } else {
+                } label: {
                     DockIcon(systemName: "square.and.arrow.up")
-                        .opacity(0.35)
                 }
+                .buttonStyle(.plain)
+                .disabled(model.captions.isEmpty)
+                .opacity(model.captions.isEmpty ? 0.35 : 1)
 
                 SessionMenu()
             }
@@ -82,16 +83,17 @@ struct ControlDock: View {
 
             StartStopButton()
 
-            if let url = model.shareFileURL {
-                ShareLink(item: url) {
-                    DockIcon(systemName: "square.and.arrow.up")
+            Button {
+                if let session = model.currentSession {
+                    model.requestExport(of: session, sourceOnly: false)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("导出逐字稿"))
-            } else {
+            } label: {
                 DockIcon(systemName: "square.and.arrow.up")
-                    .opacity(0.35)
             }
+            .buttonStyle(.plain)
+            .disabled(model.captions.isEmpty)
+            .opacity(model.captions.isEmpty ? 0.35 : 1)
+            .accessibilityLabel(L("导出逐字稿"))
 
             SessionMenu()
         }
@@ -270,14 +272,23 @@ struct SessionMenu: View {
                 Label(L("复制语音文本"), systemImage: "doc.on.doc")
             }
 
-            if let session = model.currentSession, let files = model.exportFiles(for: session) {
-                ShareLink(item: files.full) {
-                    Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
+            Button {
+                if let session = model.currentSession {
+                    model.requestExport(of: session, sourceOnly: false)
                 }
-                ShareLink(item: files.source) {
-                    Label(L("导出纯语音文本"), systemImage: "text.alignleft")
-                }
+            } label: {
+                Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
             }
+            .disabled(model.currentSession == nil)
+
+            Button {
+                if let session = model.currentSession {
+                    model.requestExport(of: session, sourceOnly: true)
+                }
+            } label: {
+                Label(L("导出纯语音文本"), systemImage: "text.alignleft")
+            }
+            .disabled(model.currentSession == nil)
 
             Divider()
 

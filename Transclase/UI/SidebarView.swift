@@ -155,13 +155,16 @@ struct SidebarView: View {
                 Label(L("复制语音文本"), systemImage: "doc.on.doc")
             }
 
-            if let files = model.exportFiles(for: session) {
-                ShareLink(item: files.full) {
-                    Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
-                }
-                ShareLink(item: files.source) {
-                    Label(L("导出纯语音文本"), systemImage: "text.alignleft")
-                }
+            Button {
+                model.requestExport(of: session, sourceOnly: false)
+            } label: {
+                Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
+            }
+
+            Button {
+                model.requestExport(of: session, sourceOnly: true)
+            } label: {
+                Label(L("导出纯语音文本"), systemImage: "text.alignleft")
             }
 
             Divider()

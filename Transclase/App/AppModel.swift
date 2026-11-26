@@ -31,6 +31,8 @@ final class AppModel: ObservableObject {
     @Published var sessions: [LectureSession] = []
     @Published var currentSession: LectureSession?
     @Published var summaries: [SummaryBlock] = []
+    /// Set when a file share/export is requested; the payload is built on tap.
+    @Published var pendingShare: URL?
     @Published var assistantBusy = false
     @Published var assistantError: String?
     @Published var chat: [AssistantTurn] = []
@@ -588,6 +590,28 @@ final class AppModel: ObservableObject {
         }
         return (session.url, url)
     }
+
+    /// Builds the export on demand (only when the user actually taps).
+    func requestExport(of session: LectureSession, sourceOnly: Bool) {
+        guard let files = exportFiles(for: session) else { return }
+        #if os(iOS)
+        pendingShare = sourceOnly ? files.source : files.full
+        #else
+        saveCopy(of: sourceOnly ? files.source : files.full)
+        #endif
+    }
+
+    #if os(macOS)
+    /// On the Mac "export" means "save a copy", not the share sheet.
+    private func saveCopy(of url: URL) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = url.lastPathComponent
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let destination = panel.url else { return }
+        try? FileManager.default.removeItem(at: destination)
+        try? FileManager.default.copyItem(at: url, to: destination)
+    }
+    #endif
 
     func copySourceText(of session: LectureSession) {
         Clipboard.copy(SessionStore.sourceText(of: session))

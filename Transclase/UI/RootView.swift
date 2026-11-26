@@ -277,6 +277,11 @@ struct RootView: View {
         .sheet(isPresented: $showSettings) {
             SettingsSheet().environmentObject(model)
         }
+        #if os(iOS)
+        .sheet(item: $model.pendingShare) { url in
+            ShareSheet(items: [url])
+        }
+        #endif
     }
 
     #endif
