@@ -100,6 +100,20 @@ final class AppModel: ObservableObject {
     /// app permanently in demo mode.
     var isDemoActive: Bool { settings.demoMode || Self.wantsDemo || transientDemo }
 
+    /// Normal lecture: translation on.
+    func startLecture() async {
+        settings.transcriptionOnly = false
+        if currentSession == nil { await newConversation() }
+        await start()
+    }
+
+    /// Starts a transcription-only session: no translation engine is contacted.
+    func startVoiceNotes() async {
+        settings.transcriptionOnly = true
+        if currentSession == nil { await newConversation() }
+        await start()
+    }
+
     /// L("看演示") must not flip a persisted setting — otherwise the app stays in
     /// fake-lecture mode forever and the next real session is nonsense.
     func playDemo() async {

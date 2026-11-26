@@ -15,6 +15,8 @@ struct AppSettings: Codable, Equatable {
     var highFidelityTranslation: Bool = true
     var fontSize: Double = 16
     var demoMode: Bool = false
+    /// Voice-notes mode: transcribe only, never translate.
+    var transcriptionOnly: Bool = false
     var autoScroll: Bool = true
 
     // Translation backend
@@ -35,7 +37,7 @@ struct AppSettings: Codable, Equatable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case sourceLanguageID, targetLanguageID, showOriginal, highFidelityTranslation, fontSize, demoMode, autoScroll
+        case sourceLanguageID, targetLanguageID, showOriginal, highFidelityTranslation, fontSize, demoMode, transcriptionOnly, autoScroll
         case translationEngine, cloudBaseURL, cloudModel
         case providers, activeProviderID, appLanguage, appearance
         case assistantEnabled, summaryIntervalMinutes
@@ -50,6 +52,7 @@ struct AppSettings: Codable, Equatable {
         highFidelityTranslation = try c.decodeIfPresent(Bool.self, forKey: .highFidelityTranslation) ?? d.highFidelityTranslation
         fontSize = try c.decodeIfPresent(Double.self, forKey: .fontSize) ?? d.fontSize
         demoMode = try c.decodeIfPresent(Bool.self, forKey: .demoMode) ?? d.demoMode
+        transcriptionOnly = try c.decodeIfPresent(Bool.self, forKey: .transcriptionOnly) ?? d.transcriptionOnly
         autoScroll = try c.decodeIfPresent(Bool.self, forKey: .autoScroll) ?? d.autoScroll
         // Unknown / removed engines (e.g. the old local Qwen3) fall back to the
         // system translator instead of failing the whole settings decode.

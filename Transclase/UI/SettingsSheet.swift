@@ -32,7 +32,6 @@ struct SettingsSheet: View {
                 translationSection
                 providerSection
                 displaySection
-                behaviorSection
                 assistantSection
                 aboutSection
                 privacySection
@@ -295,17 +294,6 @@ struct SettingsSheet: View {
             }
             Toggle(L("显示原文"), isOn: $model.settings.showOriginal)
             Toggle(L("自动跟随最新字幕"), isOn: $model.settings.autoScroll)
-        }
-    }
-
-    private var behaviorSection: some View {
-        Section {
-            Toggle(L("演示模式"), isOn: $model.settings.demoMode)
-                .disabled(model.isRunning)
-        } header: {
-            Text(L("行为"))
-        } footer: {
-            Text(L("译文按完整句子输出：识别碎片会先攒成一句，遇到句号或停顿再翻译。代价是最后一句会晚 1–2 秒。"))
         }
     }
 

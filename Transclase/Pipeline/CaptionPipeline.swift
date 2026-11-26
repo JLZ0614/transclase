@@ -73,6 +73,30 @@ final class CaptionPipeline {
 
         // Pick a translator. The user's choice wins; if it cannot start we fall
         // back to Apple's on-device engine rather than losing translation.
+        // Voice notes: transcription only, no translator is created at all.
+        if settings.transcriptionOnly {
+            translationEnabled = false
+            mt = nil
+            onTranslationEngine?(L("仅转写"))
+
+            if !settings.demoMode {
+                try await startAudio(into: recognizer)
+            }
+
+            eventTask = Task { [weak self] in
+                guard let self else { return }
+                for await event in recognizer.events {
+                    if Task.isCancelled { break }
+                    self.handle(event)
+                }
+            }
+
+            onStatus?(L("启动中…"))
+            try await recognizer.start()
+            onStatus?(L("正在听写…"))
+            return
+        }
+
         translationEnabled = true
         var engineLabel = L("系统离线翻译")
         var translator: MTEngine

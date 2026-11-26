@@ -399,7 +399,7 @@ struct EmptyStateView: View {
                 ProgressView(L("正在检查本机语言能力…"))
                     .font(.caption)
             } else if model.speechOptions.isEmpty {
-                Label(L("这台设备没有可用的系统语音识别，可以先试试演示模式"), systemImage: "exclamationmark.circle")
+                Label(L("这台设备没有可用的系统语音识别"), systemImage: "exclamationmark.circle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -413,8 +413,7 @@ struct EmptyStateView: View {
                         if model.needsDownloads {
                             await model.prepareOfflinePack()
                         } else {
-                            if model.currentSession == nil { await model.newConversation() }
-                            await model.start()
+                            await model.startLecture()
                         }
                     }
                 } label: {
@@ -436,12 +435,13 @@ struct EmptyStateView: View {
                 .disabled(model.isPreparingPack)
 
                 Button {
-                    Task { await model.playDemo() }
+                    Task { await model.startVoiceNotes() }
                 } label: {
-                    Text(L("看演示")).padding(.horizontal, 6)
+                    Text(L("语音笔记")).padding(.horizontal, 6)
                 }
                 .buttonStyle(.glass)
                 .controlSize(.large)
+                .disabled(model.isPreparing)
             }
 
             Spacer()

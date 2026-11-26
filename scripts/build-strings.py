@@ -13,6 +13,12 @@ SRC = ROOT / "translations/source.json"
 LANGS = ["en", "es", "fr", "de", "ja", "ko"]
 
 EXTRA = {
+    "语音笔记": {"en": "Voice notes", "es": "Notas de voz", "fr": "Notes vocales",
+                 "de": "Sprachnotizen", "ja": "音声メモ", "ko": "음성 메모"},
+    "仅转写": {"en": "Transcription only", "es": "Solo transcripción", "fr": "Transcription seule",
+               "de": "Nur Transkription", "ja": "文字起こしのみ", "ko": "받아쓰기만"},
+    "正在听写…": {"en": "Dictating…", "es": "Dictando…", "fr": "Dictée en cours…",
+                  "de": "Diktiert…", "ja": "音声入力中…", "ko": "받아쓰는 중…"},
     "开始下载": {"en": "Start download", "es": "Descargar", "fr": "Télécharger",
                  "de": "Laden", "ja": "ダウンロード", "ko": "다운로드"},
     "下载中…": {"en": "Downloading…", "es": "Descargando…", "fr": "Téléchargement…",
