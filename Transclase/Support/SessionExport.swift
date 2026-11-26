@@ -5,7 +5,8 @@ enum SessionExport {
         captions: [Caption],
         sourceName: String,
         targetName: String,
-        startedAt: Date
+        startedAt: Date,
+        summaries: [String] = []
     ) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -30,6 +31,17 @@ enum SessionExport {
                 lines.append("\(target)")
             }
             lines.append("")
+        }
+
+        if !summaries.isEmpty {
+            lines.append("---")
+            lines.append("")
+            lines.append("## Key points")
+            lines.append("")
+            for summary in summaries {
+                lines.append(summary)
+                lines.append("")
+            }
         }
         return lines.joined(separator: "\n")
     }

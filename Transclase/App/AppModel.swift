@@ -559,6 +559,40 @@ final class AppModel: ObservableObject {
 
     /// Single click in the workspace: load that lecture so it can be reviewed or
     /// continued. New captions are appended to the same document.
+    /// Opens a lecture file and keeps recording into it.
+    func resumeRecording(_ session: LectureSession) async {
+        await openSession(session)
+        await startLecture()
+    }
+
+    /// Two share targets for a lecture file: the full transcript and a
+    /// source-only version without translations.
+    func exportFiles(for session: LectureSession) -> (full: URL, source: URL)? {
+        let sourceText: String
+        if session.id == currentSession?.id {
+            sourceText = SessionExport.sourceMarkdown(
+                captions: captions.filter(\.isFinal),
+                languageName: sourceName,
+                startedAt: startedAt ?? Date()
+            )
+        } else {
+            sourceText = SessionStore.sourceText(of: session)
+        }
+        guard !sourceText.isEmpty else { return nil }
+
+        let base = session.url.deletingPathExtension().lastPathComponent
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(base)-原文.md")
+        guard (try? sourceText.write(to: url, atomically: true, encoding: .utf8)) != nil else {
+            return nil
+        }
+        return (session.url, url)
+    }
+
+    func copySourceText(of session: LectureSession) {
+        Clipboard.copy(SessionStore.sourceText(of: session))
+    }
+
     func openSession(_ session: LectureSession) async {
         if isRunning { await stop() }
         let loaded = SessionStore.load(session)
@@ -844,7 +878,8 @@ final class AppModel: ObservableObject {
             captions: finals,
             sourceName: sourceName,
             targetName: targetName,
-            startedAt: startedAt ?? Date()
+            startedAt: startedAt ?? Date(),
+            summaries: summaries.map(\.markdown)
         )
         markdownCache = (stamp, text)
         return text

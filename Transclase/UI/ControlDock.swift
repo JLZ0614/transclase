@@ -267,19 +267,16 @@ struct SessionMenu: View {
             Button {
                 Clipboard.copy(model.plainText)
             } label: {
-                Label(L("复制全文"), systemImage: "doc.on.doc")
+                Label(L("复制语音文本"), systemImage: "doc.on.doc")
             }
 
-            Button {
-                model.exportSourceMarkdown()
-            } label: {
-                Label(L("导出 Markdown 文件（仅原文）"), systemImage: "square.and.arrow.down")
-            }
-
-            Button {
-                Clipboard.copy(model.translationMarkdown)
-            } label: {
-                Label(L("复制为 Markdown"), systemImage: "text.badge.checkmark")
+            if let session = model.currentSession, let files = model.exportFiles(for: session) {
+                ShareLink(item: files.full) {
+                    Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
+                }
+                ShareLink(item: files.source) {
+                    Label(L("导出纯语音文本"), systemImage: "text.alignleft")
+                }
             }
 
             Divider()
@@ -289,6 +286,13 @@ struct SessionMenu: View {
             } label: {
                 Label(L("清空字幕"), systemImage: "trash")
             }
+
+            #if os(macOS)
+            if let session = model.currentSession {
+                Divider()
+                Button(L("在访达中显示")) { model.openInFinder(session) }
+            }
+            #endif
         } label: {
             DockIcon(systemName: "ellipsis")
         }

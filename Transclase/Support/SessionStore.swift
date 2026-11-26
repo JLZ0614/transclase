@@ -49,6 +49,17 @@ enum SessionStore {
         return LectureSession(id: name, url: url, createdAt: date)
     }
 
+    /// Source-only transcript of an existing file: quoted lines carry the
+    /// recognised text, everything else is translation or metadata.
+    static func sourceText(of session: LectureSession) -> String {
+        let raw = (try? String(contentsOf: session.url, encoding: .utf8)) ?? ""
+        return raw
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { $0.hasPrefix("> ") }
+            .map { String($0.dropFirst(2)) }
+            .joined(separator: "\n")
+    }
+
     static func list() -> [LectureSession] {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey]) else {

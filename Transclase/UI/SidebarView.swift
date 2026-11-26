@@ -143,10 +143,39 @@ struct SidebarView: View {
             if supportsSelection { enterSelection(with: session) }
         }
         .contextMenu {
-            if !supportsSelection {
-                Button(L("打开")) { Task { await model.openSession(session) } }
-                Button(L("在访达中显示")) { model.openInFinder(session) }
+            Button {
+                Task { await model.resumeRecording(session) }
+            } label: {
+                Label(L("打开并继续录音"), systemImage: "mic.badge.plus")
             }
+
+            Button {
+                model.copySourceText(of: session)
+            } label: {
+                Label(L("复制语音文本"), systemImage: "doc.on.doc")
+            }
+
+            if let files = model.exportFiles(for: session) {
+                ShareLink(item: files.full) {
+                    Label(L("导出（原文 + 翻译 + 总结）"), systemImage: "square.and.arrow.up")
+                }
+                ShareLink(item: files.source) {
+                    Label(L("导出纯语音文本"), systemImage: "text.alignleft")
+                }
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                model.deleteSessions([session])
+            } label: {
+                Label(L("删除"), systemImage: "trash")
+            }
+
+            #if os(macOS)
+            Divider()
+            Button(L("在访达中显示")) { model.openInFinder(session) }
+            #endif
         }
     }
 
