@@ -177,20 +177,33 @@ struct RootView: View {
                 }
                 .help(L("显示 / 隐藏边栏"))
             }
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) { showAssistant.toggle() }
-                } label: {
-                    BrandGlyph(size: 17)
-                }
-                .help(L("翻译助手"))
+            ToolbarItem(placement: .primaryAction) {
+                // One capsule holding both actions, matching the iOS toolbar.
+                HStack(spacing: 4) {
+                    Button {
+                        withAnimation(.snappy(duration: 0.2)) { showAssistant.toggle() }
+                    } label: {
+                        BrandGlyph(size: 16)
+                            .frame(width: 26, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L("翻译助手"))
 
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "gearshape")
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 26, height: 24)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L("设置"))
                 }
-                .help(L("设置"))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .glassEffect(.regular, in: .capsule)
             }
         }
         .preferredColorScheme(model.settings.appearance.colorScheme)
