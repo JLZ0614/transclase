@@ -315,6 +315,9 @@ struct SettingsSheet: View {
     private var aboutSection: some View {
         Section(L("关于")) {
             LabeledContent(L("版本"), value: version)
+            if model.settings.translationEngine == .apple {
+                LabeledContent(L("翻译策略"), value: model.settings.highFidelityTranslation ? L("高质量") : L("低延迟"))
+            }
             LabeledContent(L("本机能力")) {
                 Text("识别 \(model.speechOptions.count) · 翻译 \(model.translationOptions.count)")
                     .foregroundStyle(.secondary)
