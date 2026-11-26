@@ -159,8 +159,8 @@ struct RootView: View {
                 .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showSettings) { SettingsSheet().environmentObject(model) }
-            .sheet(item: $model.pendingShare) { url in
-                ShareSheet(items: [url])
+            .sheet(item: $model.pendingShare) { payload in
+                ShareSheet(items: [payload.url])
             }
         }
     }
