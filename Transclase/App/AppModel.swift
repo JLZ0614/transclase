@@ -580,6 +580,20 @@ final class AppModel: ObservableObject {
         }
     }
 
+    var allFolders: [URL] { SessionStore.allFolders(in: SessionStore.directory) }
+
+    /// Moves files or folders into another folder.
+    func move(_ urls: [URL], to folder: URL) {
+        let fm = FileManager.default
+        for url in urls {
+            guard url.deletingLastPathComponent().standardizedFileURL != folder.standardizedFileURL else { continue }
+            let destination = folder.appendingPathComponent(url.lastPathComponent)
+            try? fm.removeItem(at: destination)
+            try? fm.moveItem(at: url, to: destination)
+        }
+        refreshSessions()
+    }
+
     func deleteItems(_ urls: [URL]) {
         SessionStore.delete(urls)
         if let current = currentSession, urls.contains(current.url) {

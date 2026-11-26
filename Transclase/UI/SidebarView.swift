@@ -219,8 +219,14 @@ struct SidebarView: View {
                 model.enter(folder)
             }
         }
+        .dropDestination(for: URL.self) { urls, _ in
+            model.move(urls, to: folder.url)
+            return true
+        }
         .contextMenu {
             Button { model.enter(folder) } label: { Label(L("打开"), systemImage: "folder") }
+            moveMenu(for: folder.url)
+
             Button {
                 renamingURL = folder.url
                 renameDraft = folder.id
@@ -252,6 +258,7 @@ struct SidebarView: View {
                 Task { await model.openSession(session) }
             }
         }
+        .draggable(session.url)
         .contextMenu {
             Button {
                 Task { await model.resumeRecording(session) }
@@ -277,6 +284,8 @@ struct SidebarView: View {
                 Label(L("导出纯语音文本"), systemImage: "text.alignleft")
             }
 
+            moveMenu(for: session.url)
+
             Button {
                 renamingURL = session.url
                 renameDraft = session.id
@@ -297,6 +306,41 @@ struct SidebarView: View {
             Button(L("在访达中显示")) { model.openInFinder(session) }
             #endif
         }
+    }
+
+    /// Submenu listing every folder that is not the item's current home.
+    @ViewBuilder
+    private func moveMenu(for url: URL) -> some View {
+        Menu {
+            let current = url.deletingLastPathComponent().standardizedFileURL
+            Button {
+                model.move([url], to: SessionStore.directory)
+            } label: {
+                Label(L("工作区（根目录）"), systemImage: "house")
+            }
+            .disabled(current.path == SessionStore.directory.standardizedFileURL.path)
+
+            ForEach(model.allFolders.filter {
+                $0.standardizedFileURL.path != current.path
+                    && !$0.standardizedFileURL.path.hasPrefix(url.standardizedFileURL.path)
+            }, id: \.self) { folder in
+                Button {
+                    model.move([url], to: folder)
+                } label: {
+                    Label(relativeName(of: folder), systemImage: "folder")
+                }
+            }
+        } label: {
+            Label(L("移动到…"), systemImage: "folder.badge.minus")
+        }
+    }
+
+    private func relativeName(of url: URL) -> String {
+        let rootPath = SessionStore.directory.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        guard path.hasPrefix(rootPath) else { return url.lastPathComponent }
+        let tail = String(path.dropFirst(rootPath.count))
+        return tail.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
     }
 
     private var selectionBar: some View {

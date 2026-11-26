@@ -142,6 +142,27 @@ enum SessionStore {
         }
     }
 
+    /// Every folder under `root`, depth-first — used by the "move to" menu.
+    static func allFolders(in root: URL) -> [URL] {
+        let fm = FileManager.default
+        var result: [URL] = []
+        func walk(_ url: URL) {
+            let items = (try? fm.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            )) ?? []
+            for item in items {
+                let isDir = (try? item.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+                guard isDir else { continue }
+                result.append(item)
+                walk(item)
+            }
+        }
+        walk(root)
+        return result
+    }
+
     static func list() -> [LectureSession] {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey]) else {
