@@ -574,27 +574,36 @@ final class AppModel: ObservableObject {
     }
 
     /// Two share targets for a lecture file: the full transcript and a
-    /// source-only version without translations.
+    /// source-only version without translations. Both are written as `.txt`
+    /// because iOS treats unknown extensions (like `.md`) as plain text and can
+    /// jump straight into Notes instead of showing the share sheet.
     func exportFiles(for session: LectureSession) -> (full: URL, source: URL)? {
+        let isCurrent = session.id == currentSession?.id
+
+        let fullText: String
         let sourceText: String
-        if session.id == currentSession?.id {
+        if isCurrent {
+            fullText = translationMarkdown
             sourceText = SessionExport.sourceMarkdown(
                 captions: captions.filter(\.isFinal),
                 languageName: sourceName,
                 startedAt: startedAt ?? Date()
             )
         } else {
+            fullText = (try? String(contentsOf: session.url, encoding: .utf8)) ?? ""
             sourceText = SessionStore.sourceText(of: session)
         }
-        guard !sourceText.isEmpty else { return nil }
+        guard !fullText.isEmpty, !sourceText.isEmpty else { return nil }
 
         let base = session.url.deletingPathExtension().lastPathComponent
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(base)-原文.md")
-        guard (try? sourceText.write(to: url, atomically: true, encoding: .utf8)) != nil else {
+        let directory = FileManager.default.temporaryDirectory
+        let full = directory.appendingPathComponent("\(base).txt")
+        let source = directory.appendingPathComponent("\(base)-原文.txt")
+        guard (try? fullText.write(to: full, atomically: true, encoding: .utf8)) != nil,
+              (try? sourceText.write(to: source, atomically: true, encoding: .utf8)) != nil else {
             return nil
         }
-        return (session.url, url)
+        return (full, source)
     }
 
     /// The share button in the dock maps straight to "export everything".
