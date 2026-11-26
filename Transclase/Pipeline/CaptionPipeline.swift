@@ -350,6 +350,11 @@ final class CaptionPipeline {
         sentenceText = ""
         guard !text.isEmpty else { return }
 
+        // Drop leftover live rows for the same moment: a partial and its final
+        // can carry different ids, and both used to stay on screen — the reader
+        // saw the sentence twice.
+        captions.removeAll { !$0.isFinal && $0.id != id && abs($0.start - sentenceStart) < 0.6 }
+
         upsert(
             Caption(
                 id: id,
