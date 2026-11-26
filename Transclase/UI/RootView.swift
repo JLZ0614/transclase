@@ -177,13 +177,20 @@ struct RootView: View {
                 }
                 .help(L("显示 / 隐藏边栏"))
             }
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     withAnimation(.snappy(duration: 0.2)) { showAssistant.toggle() }
                 } label: {
                     BrandGlyph(size: 17)
                 }
                 .help(L("翻译助手"))
+
+                Button {
+                    showSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .help(L("设置"))
             }
         }
         .preferredColorScheme(model.settings.appearance.colorScheme)
@@ -262,22 +269,34 @@ struct RootView: View {
     #endif
 
     private var content: some View {
-        HStack(spacing: 0) {
-            if showSidebar {
-                SidebarView(showSettings: $showSettings)
-                    .frame(width: 270)
-                Divider()
-            }
+        ZStack(alignment: .trailing) {
+            HStack(spacing: 0) {
+                if showSidebar {
+                    SidebarView(showSettings: $showSettings, showsSettingsRow: false)
+                        .frame(width: 270)
+                    Divider()
+                }
 
-            mainColumn
+                mainColumn
+            }
 
             if showAssistant {
-                Divider()
-                AssistantPanel()
+                AssistantPanel(translucent: true)
                     .environmentObject(model)
                     .frame(width: 340)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+                    }
+                    .shadow(color: .black.opacity(0.18), radius: 24, y: 8)
+                    .padding(.trailing, 16)
+                    .padding(.vertical, 16)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
+        .animation(.snappy(duration: 0.22), value: showAssistant)
     }
 
     private var mainColumn: some View {
