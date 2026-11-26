@@ -8,6 +8,12 @@ import Foundation
 import Speech
 import Translation
 
+/// `URL` is not `Identifiable`, so the share sheet needs a wrapper.
+struct SharePayload: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     @Published var settings: AppSettings
@@ -32,7 +38,7 @@ final class AppModel: ObservableObject {
     @Published var currentSession: LectureSession?
     @Published var summaries: [SummaryBlock] = []
     /// Set when a file share/export is requested; the payload is built on tap.
-    @Published var pendingShare: URL?
+    @Published var pendingShare: SharePayload?
     @Published var assistantBusy = false
     @Published var assistantError: String?
     @Published var chat: [AssistantTurn] = []
@@ -595,7 +601,7 @@ final class AppModel: ObservableObject {
     func requestExport(of session: LectureSession, sourceOnly: Bool) {
         guard let files = exportFiles(for: session) else { return }
         #if os(iOS)
-        pendingShare = sourceOnly ? files.source : files.full
+        pendingShare = SharePayload(url: sourceOnly ? files.source : files.full)
         #else
         saveCopy(of: sourceOnly ? files.source : files.full)
         #endif

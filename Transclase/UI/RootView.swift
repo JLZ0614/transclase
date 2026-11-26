@@ -65,6 +65,9 @@ struct RootView: View {
             }
         }
         .sheet(isPresented: $showSettings) { SettingsSheet().environmentObject(model) }
+        .sheet(item: $model.pendingShare) { payload in
+            ShareSheet(items: [payload.url])
+        }
     }
 
     /// Rounded card pinned to one side, with a tap-anywhere backdrop to close it.
@@ -156,6 +159,9 @@ struct RootView: View {
                 .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showSettings) { SettingsSheet().environmentObject(model) }
+            .sheet(item: $model.pendingShare) { url in
+                ShareSheet(items: [url])
+            }
         }
     }
     #endif
@@ -278,8 +284,8 @@ struct RootView: View {
             SettingsSheet().environmentObject(model)
         }
         #if os(iOS)
-        .sheet(item: $model.pendingShare) { url in
-            ShareSheet(items: [url])
+        .sheet(item: $model.pendingShare) { payload in
+            ShareSheet(items: [payload.url])
         }
         #endif
     }

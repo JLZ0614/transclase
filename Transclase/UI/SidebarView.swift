@@ -77,6 +77,11 @@ struct SidebarView: View {
                 Color.black.opacity(colorScheme == .dark ? 0.38 : 0.06)
             }
         }
+        #if os(iOS)
+        .sheet(item: $model.pendingShare) { payload in
+            ShareSheet(items: [payload.url])
+        }
+        #endif
         .overlay(alignment: .trailing) {
             if !floating {
                 Rectangle()
