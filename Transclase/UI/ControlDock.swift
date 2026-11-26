@@ -40,8 +40,8 @@ struct ControlDock: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .disabled(model.captions.isEmpty)
-                .opacity(model.captions.isEmpty ? 0.35 : 1)
+                .disabled(model.captionCount == 0)
+                .opacity(model.captionCount == 0 ? 0.35 : 1)
                 .accessibilityLabel(L("导出逐字稿"))
 
                 SessionMenu()
@@ -93,8 +93,8 @@ struct ControlDock: View {
                 DockIcon(systemName: "square.and.arrow.up")
             }
             .buttonStyle(.plain)
-            .disabled(model.captions.isEmpty)
-            .opacity(model.captions.isEmpty ? 0.35 : 1)
+            .disabled(model.captionCount == 0)
+            .opacity(model.captionCount == 0 ? 0.35 : 1)
             .accessibilityLabel(L("导出逐字稿"))
 
             SessionMenu()
@@ -110,8 +110,8 @@ struct ControlDock: View {
     /// One-line status used by both layouts.
     private var statusLine: String {
         if model.speechProgress != nil { return L("下载中…") }
-        guard !model.captions.isEmpty else { return L(model.statusText) }
-        return String(format: NSLocalizedString("%d 段", comment: ""), model.captions.count)
+        guard model.captionCount > 0 else { return L(model.statusText) }
+        return String(format: NSLocalizedString("%d 段", comment: ""), model.captionCount)
     }
 
     /// Status is a localised key; the segment counter is a separate, formatted
@@ -306,7 +306,7 @@ struct SessionMenu: View {
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
         .fixedSize()
-        .disabled(model.captions.isEmpty)
-        .opacity(model.captions.isEmpty ? 0.35 : 1)
+        .disabled(model.captionCount == 0)
+        .opacity(model.captionCount == 0 ? 0.35 : 1)
     }
 }

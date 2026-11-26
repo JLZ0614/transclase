@@ -267,7 +267,7 @@ struct RootView: View {
             Button(L("清空"), role: .destructive) { model.clear() }
             Button(L("取消"), role: .cancel) { model.pendingClearConfirmation = false }
         } message: {
-            Text(String(format: NSLocalizedString("当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。", comment: ""), model.captions.count))
+            Text(String(format: NSLocalizedString("当前 %d 段内容会被删除，且无法恢复。想留档的话先导出。", comment: ""), model.captionCount))
         }
         .fileExporter(
             isPresented: Binding(
@@ -344,10 +344,10 @@ struct RootView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
-                if model.captions.isEmpty {
+                if model.captionCount == 0 {
                     EmptyStateView()
                 } else {
-                    CaptionListView()
+                    CaptionListView(transcript: model.transcript)
                 }
             }
         }

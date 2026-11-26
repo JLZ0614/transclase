@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CaptionListView: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject var transcript: TranscriptStore
     @State private var userIsScrolling = false
     private let bottomID = "caption-bottom"
 
@@ -10,7 +11,7 @@ struct CaptionListView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 26) {
-                        ForEach(model.captions) { caption in
+                        ForEach(transcript.captions) { caption in
                             CaptionRow(caption: caption)
                                 .id(caption.id)
                         }
