@@ -305,6 +305,13 @@ struct RootView: View {
             }
 
             if showAssistant {
+                // Tapping anywhere outside the card closes it.
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.snappy(duration: 0.2)) { showAssistant = false }
+                    }
+
                 AssistantPanel(translucent: true)
                     .environmentObject(model)
                     .frame(width: 340)

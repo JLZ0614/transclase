@@ -156,7 +156,8 @@ struct SidebarView: View {
                         showNewFolder = true
                     } label: {
                         Image(systemName: "folder.badge.plus")
-                            .font(.subheadline.weight(.medium))
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)
                     .help(L("新建文件夹"))
@@ -182,8 +183,8 @@ struct SidebarView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.primary)
                     }
                     .menuIndicator(.hidden)
                     .buttonStyle(.plain)
