@@ -150,32 +150,45 @@ struct SidebarView: View {
                 Button(L("完成")) { endSelection() }
                     .font(.subheadline)
             } else {
-                Menu {
+                HStack(spacing: 12) {
                     Button {
                         newFolderName = ""
                         showNewFolder = true
                     } label: {
-                        Label(L("新建文件夹"), systemImage: "folder.badge.plus")
+                        Image(systemName: "folder.badge.plus")
+                            .font(.subheadline.weight(.medium))
                     }
-                    Button {
-                        isSelecting = true
+                    .buttonStyle(.plain)
+                    .help(L("新建文件夹"))
+                    .accessibilityLabel(L("新建文件夹"))
+
+                    Menu {
+                        Button {
+                            newFolderName = ""
+                            showNewFolder = true
+                        } label: {
+                            Label(L("新建文件夹"), systemImage: "folder.badge.plus")
+                        }
+                        Button {
+                            isSelecting = true
+                        } label: {
+                            Label(L("批量删除"), systemImage: "checkmark.circle")
+                        }
+                        Divider()
+                        Button {
+                            model.refreshSessions()
+                        } label: {
+                            Label(L("刷新"), systemImage: "arrow.clockwise")
+                        }
                     } label: {
-                        Label(L("批量删除"), systemImage: "checkmark.circle")
+                        Image(systemName: "ellipsis.circle")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
                     }
-                    Divider()
-                    Button {
-                        model.refreshSessions()
-                    } label: {
-                        Label(L("刷新"), systemImage: "arrow.clockwise")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
+                    .menuIndicator(.hidden)
+                    .buttonStyle(.plain)
+                    .fixedSize()
                 }
-                .menuIndicator(.hidden)
-                .buttonStyle(.plain)
-                .fixedSize()
             }
         }
         .padding(.horizontal, 16)
