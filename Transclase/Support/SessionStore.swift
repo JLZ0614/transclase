@@ -36,17 +36,20 @@ enum SessionStore {
         formatter.string(from: date).replacingOccurrences(of: " ", with: "-")
     }
 
-    static func create(at date: Date = Date(), in folder: URL? = nil) -> LectureSession {
+    static func create(at date: Date = Date(), in folder: URL? = nil, suffix: String = "") -> LectureSession {
         let directory = folder ?? self.directory
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        var name = fileName(for: date)
+
+        let stamp = fileName(for: date) + (suffix.isEmpty ? "" : "-\(suffix)")
+        var name = stamp
         var url = directory.appendingPathComponent("\(name).md")
-        var suffix = 2
+        var counter = 2
         while FileManager.default.fileExists(atPath: url.path) {
-            name = "\(fileName(for: date))-\(suffix)"
+            name = "\(stamp)-\(counter)"
             url = directory.appendingPathComponent("\(name).md")
-            suffix += 1
+            counter += 1
         }
+
         let header = """
         # \(formatter.string(from: date))
 

@@ -13,6 +13,7 @@ SRC = ROOT / "translations/source.json"
 LANGS = ["en", "es", "fr", "de", "ja", "ko"]
 
 EXTRA = {
+    "笔记": {"en": "Note", "es": "Nota", "fr": "Note", "de": "Notiz", "ja": "メモ", "ko": "메모"},
     "语音笔记": {"en": "Voice notes", "es": "Notas de voz", "fr": "Notes vocales",
                  "de": "Sprachnotizen", "ja": "音声メモ", "ko": "음성 메모"},
     "仅转写": {"en": "Transcription only", "es": "Solo transcripción", "fr": "Transcription seule",

@@ -123,7 +123,18 @@ final class AppModel: ObservableObject {
     /// Starts a transcription-only session: no translation engine is contacted.
     func startVoiceNotes() async {
         settings.transcriptionOnly = true
-        if currentSession == nil { await newConversation() }
+        if isRunning { await stop() }
+        if currentSession == nil {
+            pipeline.clear()
+            let session = SessionStore.create(in: workspaceFolder, suffix: L("笔记"))
+            currentSession = session
+            summaries = []
+            chat = []
+            summarizedCaptionCount = 0
+            persistedFinalCount = 0
+            hasTranscriptHeader = false
+            refreshSessions()
+        }
         await start()
     }
 
