@@ -424,12 +424,15 @@ final class AppModel: ObservableObject {
 
     func stop() async {
         guard isRunning else { return }
-        await pipeline.stop()
+        // Flip the UI first: tearing down the audio engine and the recogniser can
+        // take a second on a phone, and the button must react immediately.
         isRunning = false
         setScreenAwake(false)
         level = 0
         transientDemo = false
         stopSummaryTimer()
+
+        await pipeline.stop()
         persistTranscript()
     }
 

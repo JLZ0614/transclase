@@ -34,13 +34,12 @@ final class OpenAICompatibleEngine: MTEngine {
     // MARK: - MTEngine
 
     func prepare() async throws {
-        if baseURL.isFileURL { throw MTError.failed(L("端点地址无效")) }
-        // A cheap reachability probe: better to fall back once at start than to
-        // fail on every single sentence.
-        _ = try? await request(path: "models", method: "GET", body: nil, timeout: 6)
-        guard await reachable() else {
-            throw MTError.failed("连不上 \(baseURL.absoluteString)，请确认服务已启动")
+        guard !baseURL.isFileURL, baseURL.scheme != nil else {
+            throw MTError.failed(L("端点地址无效"))
         }
+        // No reachability probe here: it used to block the record button for up
+        // to six seconds. A dead endpoint now fails on the first sentence, which
+        // shows up as a retryable row instead of a frozen start.
     }
 
     func translate(_ text: String) async throws -> String {
@@ -155,10 +154,6 @@ final class OpenAICompatibleEngine: MTEngine {
 
     // MARK: - Transport
 
-    private func reachable() async -> Bool {
-        let data = try? await request(path: "models", method: "GET", body: nil, timeout: 6)
-        return data != nil
-    }
 
     private func request(
         path: String,
