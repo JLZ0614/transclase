@@ -26,18 +26,7 @@ final class AudioLevelMeter: ObservableObject {
 /// publishing them here made every view re-render, including the record button.
 @MainActor
 final class TranscriptStore: ObservableObject {
-    let transcript = TranscriptStore()
-    /// Cheap published signal for views that only care whether the list is empty.
-    @Published private(set) var captionCount = 0
-
-    /// Not `@Published` on purpose: only `CaptionListView` subscribes.
-    var captions: [Caption] {
-        get { transcript.captions }
-        set {
-            transcript.captions = newValue
-            if newValue.count != captionCount { captionCount = newValue.count }
-        }
-    }
+    @Published var captions: [Caption] = []
 }
 
 @MainActor
