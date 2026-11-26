@@ -140,7 +140,7 @@ struct SidebarView: View {
             }
 
             Text(model.workspacePath.last ?? L("工作区"))
-                .font(.subheadline.weight(.medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
@@ -156,7 +156,7 @@ struct SidebarView: View {
                         showNewFolder = true
                     } label: {
                         Image(systemName: "folder.badge.plus")
-                            .font(.system(size: 17, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)
@@ -183,7 +183,7 @@ struct SidebarView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
-                            .font(.system(size: 17, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.primary)
                     }
                     .menuIndicator(.hidden)
