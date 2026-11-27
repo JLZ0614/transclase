@@ -3,6 +3,9 @@ import SwiftUI
 /// Right-hand assistant rail: timed key points, one-click summary, and Q&A over
 /// the current transcript. Mirrors the right rail of a chat app rather than a
 /// modal sheet, so it never blocks the captions.
+/// Everything in the assistant rail is drawn at this multiple of its base size.
+private let assistantScale: CGFloat = 1.2
+
 struct AssistantPanel: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.colorScheme) private var colorScheme
@@ -30,7 +33,7 @@ struct AssistantPanel: View {
             Divider()
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 14) {
                     ForEach(model.summaries) { block in
                         summaryCard(block)
                     }
@@ -46,7 +49,7 @@ struct AssistantPanel: View {
 
             if let error = model.assistantError {
                 Text(error)
-                    .font(.caption)
+                    .font(.system(size: 14))
                     .foregroundStyle(.orange)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 6)
@@ -61,7 +64,7 @@ struct AssistantPanel: View {
                     submit()
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 19.2))
                 }
                 .buttonStyle(.plain)
                 .disabled(question.trimmingCharacters(in: .whitespaces).isEmpty || model.assistantBusy)
@@ -75,7 +78,7 @@ struct AssistantPanel: View {
         return HStack(spacing: 8) {
             if showsTitle {
                 Text(L("翻译助手"))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 14.4, weight: .semibold))
             }
             Spacer()
             Menu {
@@ -87,7 +90,7 @@ struct AssistantPanel: View {
                 Toggle(L("自动总结"), isOn: $model.settings.assistantEnabled)
             } label: {
                 Image(systemName: "clock")
-                    .font(.system(size: 12))
+                    .font(.system(size: 14.4))
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -99,7 +102,7 @@ struct AssistantPanel: View {
                 if model.assistantBusy {
                     ProgressView().controlSize(.mini)
                 } else {
-                    Text(L("总结")).font(.system(size: 11, weight: .medium))
+                    Text(L("总结")).font(.system(size: 13.2, weight: .medium))
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -114,15 +117,15 @@ struct AssistantPanel: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(block.range)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 12.0, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(block.createdAt, style: .time)
-                    .font(.system(size: 9))
+                    .font(.system(size: 10.8))
                     .foregroundStyle(.tertiary)
             }
             Text(LocalizedStringKey(block.markdown))
-                .font(.system(size: 12))
+                .font(.system(size: 14.4))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -134,7 +137,7 @@ struct AssistantPanel: View {
         HStack {
             if turn.isUser { Spacer(minLength: 20) }
             Text(turn.text)
-                .font(.system(size: 12))
+                .font(.system(size: 14.4))
                 .textSelection(.enabled)
                 .padding(9)
                 .background(
@@ -148,7 +151,7 @@ struct AssistantPanel: View {
     private var placeholder: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L("使用翻译助手需要先添加模型 API"))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15.6, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 4) {
                 step(1, L("打开「设置 → 翻译模型」"))
@@ -158,7 +161,7 @@ struct AssistantPanel: View {
             }
 
             Text(L("完成后即可在此总结要点、提问课堂内容。"))
-                .font(.system(size: 11))
+                .font(.system(size: 13.2))
                 .foregroundStyle(.secondary)
                 .padding(.top, 2)
         }
@@ -168,10 +171,10 @@ struct AssistantPanel: View {
     private func step(_ index: Int, _ text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text("\(index).")
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 13.2, weight: .medium))
                 .foregroundStyle(.tertiary)
             Text(text)
-                .font(.system(size: 11))
+                .font(.system(size: 13.2))
                 .foregroundStyle(.secondary)
         }
     }
