@@ -9,21 +9,29 @@ struct PresetPickerView: View {
 
     var body: some View {
         NavigationStack {
-            List(ProviderPreset.all) { preset in
-                Button {
-                    onPick(preset)
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(preset.name)
-                            .foregroundStyle(.primary)
-                        Text(preset.baseURL)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+            Group {
+                if ProviderPreset.all.isEmpty {
+                    Text(L("暂无可添加的供应商"))
+                        .foregroundStyle(.secondary)
+                } else {
+                    List(ProviderPreset.all) { preset in
+                        Button {
+                            onPick(preset)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(preset.name)
+                                    .foregroundStyle(.primary)
+                                Text(preset.baseURL)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
             }
             .navigationTitle(L("添加模型供应商"))
             #if os(iOS)
@@ -34,11 +42,12 @@ struct PresetPickerView: View {
                     Button(L("取消")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(L("自定义")) {
-                        onCustom()
-                    }
+                    Button(L("自定义")) { onCustom() }
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 460, idealWidth: 520, minHeight: 420, idealHeight: 560)
+        #endif
     }
 }

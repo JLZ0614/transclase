@@ -78,6 +78,78 @@ struct ProviderPreset: Identifiable, Hashable {
             apiKeyURL: "https://platform.minimaxi.com/user-center/basic-information/interface-key"
         ),
         ProviderPreset(
+            id: "gemini", name: "Google Gemini",
+            baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+            models: ["gemini-2.5-flash", "gemini-2.5-pro"],
+            apiKeyURL: "https://aistudio.google.com/app/apikey"
+        ),
+        ProviderPreset(
+            id: "qianfan", name: "百度文心",
+            baseURL: "https://qianfan.baidubce.com/v2",
+            models: ["ernie-4.5-turbo-128k", "ernie-speed-128k"],
+            apiKeyURL: "https://console.bce.baidu.com/iam/#/iam/apikey/list"
+        ),
+        ProviderPreset(
+            id: "spark", name: "讯飞星火",
+            baseURL: "https://spark-api-open.xf-yun.com/v1",
+            models: ["generalv3.5", "4.0Ultra"],
+            apiKeyURL: "https://console.xfyun.cn/services/cbm"
+        ),
+        ProviderPreset(
+            id: "hunyuan", name: "腾讯混元",
+            baseURL: "https://api.hunyuan.cloud.tencent.com/v1",
+            models: ["hunyuan-turbos-latest", "hunyuan-large"],
+            apiKeyURL: "https://console.cloud.tencent.com/hunyuan/api-key"
+        ),
+        ProviderPreset(
+            id: "stepfun", name: "阶跃星辰",
+            baseURL: "https://api.stepfun.com/v1",
+            models: ["step-2-16k", "step-1-8k"],
+            apiKeyURL: "https://platform.stepfun.com/interface-key"
+        ),
+        ProviderPreset(
+            id: "yi", name: "零一万物",
+            baseURL: "https://api.lingyiwanwu.com/v1",
+            models: ["yi-lightning", "yi-large"],
+            apiKeyURL: "https://platform.lingyiwanwu.com/apikeys"
+        ),
+        ProviderPreset(
+            id: "baichuan", name: "百川智能",
+            baseURL: "https://api.baichuan-ai.com/v1",
+            models: ["Baichuan4", "Baichuan3-Turbo"],
+            apiKeyURL: "https://platform.baichuan-ai.com/console/apikey"
+        ),
+        ProviderPreset(
+            id: "perplexity", name: "Perplexity",
+            baseURL: "https://api.perplexity.ai",
+            models: ["sonar", "sonar-pro"],
+            apiKeyURL: "https://www.perplexity.ai/settings/api"
+        ),
+        ProviderPreset(
+            id: "together", name: "Together AI",
+            baseURL: "https://api.together.xyz/v1",
+            models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
+            apiKeyURL: "https://api.together.xyz/settings/api-keys"
+        ),
+        ProviderPreset(
+            id: "fireworks", name: "Fireworks",
+            baseURL: "https://api.fireworks.ai/inference/v1",
+            models: ["accounts/fireworks/models/llama-v3p3-70b-instruct"],
+            apiKeyURL: "https://fireworks.ai/account/api-keys"
+        ),
+        ProviderPreset(
+            id: "deepinfra", name: "DeepInfra",
+            baseURL: "https://api.deepinfra.com/v1/openai",
+            models: ["meta-llama/Llama-3.3-70B-Instruct"],
+            apiKeyURL: "https://deepinfra.com/dash/api_keys"
+        ),
+        ProviderPreset(
+            id: "cerebras", name: "Cerebras",
+            baseURL: "https://api.cerebras.ai/v1",
+            models: ["llama-3.3-70b"],
+            apiKeyURL: "https://cloud.cerebras.ai/platform"
+        ),
+        ProviderPreset(
             id: "ollama", name: "本地 Ollama",
             baseURL: "http://127.0.0.1:11434/v1",
             models: ["qwen2.5:7b", "llama3.2"],

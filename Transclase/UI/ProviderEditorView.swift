@@ -104,6 +104,9 @@ struct ProviderEditorView: View {
                     Button(L("完成")) { dismiss() }
                 }
             }
+            #if os(macOS)
+            .frame(minWidth: 460, idealWidth: 520, minHeight: 420, idealHeight: 560)
+            #endif
             .onAppear {
                 if let provider { keyDraft = model.providerKey(provider) ?? "" }
             }
