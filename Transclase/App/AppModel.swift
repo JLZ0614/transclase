@@ -965,13 +965,20 @@ final class AppModel: ObservableObject {
         return (text, "\(start)–\(end)")
     }
 
-    func summarizeNow() async {
+    func summarizeNow(auto: Bool = false) async {
         guard !assistantBusy else { return }
-        guard let client = assistantClient() else { return }
+
+        guard let client = assistantClient() else {
+            if !auto {
+                assistantError = L("先在设置里添加模型服务商并填入 API Key。")
+            }
+            return
+        }
 
         let (text, range) = transcript(since: summarizedCaptionCount)
         guard !text.isEmpty else {
-            assistantError = L("还没有可总结的内容。")
+            // The timer should not nag when nothing new has been said.
+            if !auto { assistantError = L("还没有可总结的内容。") }
             return
         }
 
@@ -1032,7 +1039,8 @@ final class AppModel: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
                 guard !Task.isCancelled else { break }
-                await self?.summarizeNow()
+                guard let self, self.isRunning else { break }
+                await self.summarizeNow(auto: true)
             }
         }
     }

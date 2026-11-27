@@ -284,10 +284,6 @@ struct SettingsSheet: View {
             if model.settings.translationEngine == .apple {
                 LabeledContent(L("实际策略"), value: model.effectiveTranslationStrategy)
             }
-            LabeledContent(L("本机能力")) {
-                Text("识别 \(model.speechOptions.count) · 翻译 \(model.translationOptions.count)")
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 
