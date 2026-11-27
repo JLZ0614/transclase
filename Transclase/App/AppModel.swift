@@ -4,6 +4,7 @@ import AppKit
 import UIKit
 #endif
 import Combine
+import Combine
 import Foundation
 import Speech
 import Translation
@@ -94,6 +95,7 @@ final class AppModel: ObservableObject {
     private var shareFileCache: (stamp: Int, url: URL)?
     private var transientDemo = false
     private var summaryTask: Task<Void, Never>?
+    private var settingsCancellable: AnyCancellable?
     private var summarizedCaptionCount = 0
     private var persistedFinalCount = 0
     private var hasTranscriptHeader = false
@@ -107,6 +109,14 @@ final class AppModel: ObservableObject {
             settings.demoMode = false
             settings.save()
         }
+
+        // Persist every settings change here instead of relying on a SwiftUI
+        // `onChange` — that hook only existed in the macOS body, so iOS never
+        // saved languages, providers or the assistant options.
+        settingsCancellable = $settings
+            .removeDuplicates()
+            .debounce(for: .milliseconds(250), scheduler: RunLoop.main)
+            .sink { $0.save() }
         pipeline.onCaptionsChanged = { [weak self] captions in
             guard let self else { return }
             self.captions = captions

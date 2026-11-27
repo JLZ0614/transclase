@@ -68,18 +68,41 @@ struct AppSettings: Codable, Equatable {
         summaryIntervalMinutes = try c.decodeIfPresent(Int.self, forKey: .summaryIntervalMinutes) ?? d.summaryIntervalMinutes
     }
 
+    /// Settings live in a JSON file next to the credentials: UserDefaults can
+    /// lose writes when iOS kills the app on swipe-up, which wiped the chosen
+    /// languages and — worse — the provider UUIDs the API keys are stored under.
+    private static var fileURL: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory())
+        return base
+            .appendingPathComponent("Transclase", isDirectory: true)
+            .appendingPathComponent("settings.json")
+    }
+
     static func load() -> AppSettings {
-        guard
-            let data = UserDefaults.standard.data(forKey: storageKey),
-            let decoded = try? JSONDecoder().decode(AppSettings.self, from: data)
-        else {
-            return AppSettings()
+        if let data = try? Data(contentsOf: fileURL),
+           let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
+            return decoded
         }
-        return decoded
+
+        // Migrate the value written by older builds into UserDefaults.
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
+            decoded.save()
+            return decoded
+        }
+        return AppSettings()
     }
 
     func save() {
         guard let data = try? JSONEncoder().encode(self) else { return }
+        let fm = FileManager.default
+        try? fm.createDirectory(
+            at: Self.fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try? data.write(to: Self.fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        // Keep the legacy key in sync so downgrades still see something sane.
         UserDefaults.standard.set(data, forKey: Self.storageKey)
     }
 }
