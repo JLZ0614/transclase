@@ -785,6 +785,9 @@ final class AppModel: ObservableObject {
         SessionStore.read(session)
     }
 
+    /// Last connection result per provider, for the status dot.
+    @Published var providerStatus: [UUID: Bool] = [:]
+
     /// Connection test for one specific provider (used by the engine picker).
     func testProvider(_ provider: ModelProvider) async -> String {
         guard let url = URL(string: provider.baseURL), url.scheme != nil else {
@@ -798,10 +801,22 @@ final class AppModel: ObservableObject {
         do {
             let ids = try await LLMClient(baseURL: url, model: provider.model, apiKey: key)
                 .listModels(timeout: 12)
+            providerStatus[provider.id] = true
             return String(format: NSLocalizedString("连接成功，可用模型 %d 个", comment: ""), ids.count)
         } catch {
+            providerStatus[provider.id] = false
             let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             return detail
+        }
+    }
+
+    /// Silently probes every provider that has a key, so the settings list can
+    /// show a green dot without the user pressing anything.
+    func testAllProviders() async {
+        for provider in settings.providers {
+            let key = CredentialStore.load("provider.\(provider.id.uuidString)") ?? ""
+            guard !key.isEmpty else { continue }
+            _ = await testProvider(provider)
         }
     }
 
@@ -842,6 +857,7 @@ final class AppModel: ObservableObject {
         do {
             let ids = try await LLMClient(baseURL: url, model: provider.model, apiKey: key)
                 .listModels(timeout: 12)
+            providerStatus[provider.id] = true
             return String(format: NSLocalizedString("连接成功，可用模型 %d 个", comment: ""), ids.count)
         } catch {
             let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

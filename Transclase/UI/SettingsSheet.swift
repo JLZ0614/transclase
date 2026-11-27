@@ -6,6 +6,9 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isTesting = false
+    @State private var editingProvider: ModelProvider?
+    @State private var showPresetPicker = false
+    @State private var isTestingPlaceholder = false
     @State private var engineTestName = ""
     @State private var engineTestResult: String?
     @State private var showNewModel = false
@@ -33,9 +36,7 @@ struct SettingsSheet: View {
         NavigationStack {
             Form {
                 languageSection
-                packsSection
                 translationSection
-                providerSection
                 displaySection
                 assistantSection
                 aboutSection
@@ -98,31 +99,6 @@ struct SettingsSheet: View {
 
     // MARK: - 翻译
 
-    @ViewBuilder
-    private var packsSection: some View {
-        Section {
-            NavigationLink {
-                ModelManagerView().environmentObject(model)
-            } label: {
-                LabeledContent(L("已下载的识别模型")) {
-                    Text(model.isSpeechModelInstalled ? L("已安装") : L("未安装"))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            NavigationLink {
-                LanguagePackView().environmentObject(model)
-            } label: {
-                LabeledContent(L("离线翻译语言包")) {
-                    Text(model.isTranslationPackInstalled ? L("已安装") : L("未下载"))
-                        .foregroundStyle(.secondary)
-                }
-            }
-        } header: {
-            Text(L("离线可用"))
-        }
-    }
-
     private var translationSection: some View {
         Section {
             engineRow(
@@ -133,8 +109,14 @@ struct SettingsSheet: View {
                 model.syncTranslationConfiguration(force: true)
             }
 
+            if model.settings.translationEngine == .apple {
+                Text(L("语言包在「系统设置 → 通用 → 语言与地区 → 翻译语言」中下载。"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
             ForEach(model.settings.providers) { provider in
-                HStack {
+                HStack(spacing: 8) {
                     engineRow(
                         title: provider.name,
                         selected: model.settings.translationEngine == .cloud
@@ -144,27 +126,49 @@ struct SettingsSheet: View {
                         model.settings.translationEngine = .cloud
                     }
 
+                    Circle()
+                        .fill(dotColor(for: provider))
+                        .frame(width: 7, height: 7)
+
                     Spacer(minLength: 8)
 
-                    Button(L("测试")) {
-                        engineTestName = provider.name
-                        engineTestResult = nil
-                        Task { engineTestResult = await model.testProvider(provider) }
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(model.isRunning)
+                    Button(L("编辑")) { editingProvider = provider }
+                        .buttonStyle(.borderless)
+                        .disabled(model.isRunning)
                 }
             }
 
-            if let engineTestResult {
-                Text("\(engineTestName)：\(engineTestResult)")
-                    .font(.caption)
-                    .foregroundStyle(engineTestResult.hasPrefix(L("连接成功"))
-                                     ? AnyShapeStyle(.green) : AnyShapeStyle(.red))
-                    .textSelection(.enabled)
+            Button {
+                showPresetPicker = true
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text(L("添加模型供应商"))
+                    Spacer()
+                }
+                .contentShape(Rectangle())
             }
         } header: {
-            Text(L("翻译"))
+            Text(L("翻译模型"))
+        }
+        .task { await model.testAllProviders() }
+        .sheet(item: $editingProvider) { provider in
+            ProviderEditorView(providerID: provider.id).environmentObject(model)
+        }
+        .sheet(isPresented: $showPresetPicker) {
+            PresetPickerView { preset in
+                addProvider(preset)
+                showPresetPicker = false
+            }
+            .environmentObject(model)
+        }
+    }
+
+    private func dotColor(for provider: ModelProvider) -> Color {
+        switch model.providerStatus[provider.id] {
+        case .some(true): return .green
+        case .some(false): return .red
+        case .none: return Color.secondary.opacity(0.35)
         }
     }
 
@@ -183,117 +187,6 @@ struct SettingsSheet: View {
     }
 
     // MARK: - 模型服务商
-
-    private var providerSection: some View {
-        Section {
-            Picker(L("服务商"), selection: $model.settings.activeProviderID) {
-                ForEach(model.settings.providers) { provider in
-                    Text(provider.name).tag(Optional(provider.id))
-                }
-            }
-            .disabled(model.isRunning)
-
-            if let provider = model.activeProvider {
-                SecureField("API Key", text: $keyDraft)
-                    .textFieldStyle(.roundedBorder)
-                    .autocorrectionDisabled()
-
-                if let urlString = provider.apiKeyURL.isEmpty ? nil : provider.apiKeyURL,
-                   let url = URL(string: urlString) {
-                    Link(destination: url) {
-                        Label(L("获取 API Key"), systemImage: "arrow.up.right.square")
-                    }
-                }
-
-                modelRows(for: provider)
-
-                Button {
-                    testResult = nil
-                    isTesting = true
-                    Task {
-                        testResult = await model.testProvider(provider)
-                        isTesting = false
-                    }
-                } label: {
-                    HStack {
-                        Text(L("测试 API 连接"))
-                        Spacer()
-                        if isTesting { ProgressView().controlSize(.mini) }
-                    }
-                }
-                .disabled(isTesting)
-
-                if let testResult {
-                    Text(testResult)
-                        .font(.caption)
-                        .foregroundStyle(testResult.hasPrefix(L("连接成功"))
-                                         ? AnyShapeStyle(.green) : AnyShapeStyle(.red))
-                        .textSelection(.enabled)
-                }
-
-                if provider.apiKeyURL.isEmpty {
-                    TextField(L("名称"), text: providerBinding(\.name, fallback: ""))
-                        .textFieldStyle(.roundedBorder)
-                    TextField(L("地址"), text: providerBinding(\.baseURL, fallback: ""))
-                        .textFieldStyle(.roundedBorder)
-                }
-            }
-
-            Menu {
-                ForEach(ProviderPreset.all) { preset in
-                    Button(preset.name) { addProvider(preset) }
-                }
-                Divider()
-                Button(L("自定义服务商")) { addProvider(nil) }
-            } label: {
-                Label(L("添加模型服务商"), systemImage: "plus")
-            }
-
-            Button(role: .destructive) {
-                removeActiveProvider()
-            } label: {
-                Label(L("删除当前服务商"), systemImage: "minus")
-            }
-            .disabled(model.settings.providers.count <= 1)
-        } header: {
-            Text(L("模型服务商"))
-        }
-    }
-
-    /// Model list for one provider: pick one, add new ones, delete the extras.
-    @ViewBuilder
-    private func modelRows(for provider: ModelProvider) -> some View {
-        Picker(L("模型"), selection: providerBinding(\.model, fallback: "")) {
-            ForEach(provider.models, id: \.self) { Text($0).tag($0) }
-        }
-        .disabled(model.isRunning)
-
-        ForEach(provider.models, id: \.self) { name in
-            if name != provider.models.first || provider.models.count > 1 {
-                HStack {
-                    Text(name)
-                        .foregroundStyle(name == provider.model ? .primary : .secondary)
-                    Spacer()
-                    Button {
-                        model.removeModel(name, from: provider.id)
-                    } label: {
-                        Image(systemName: "minus.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(provider.models.count <= 1)
-                }
-            }
-        }
-
-        Button {
-            newModelName = ""
-            showNewModel = true
-        } label: {
-            Label(L("添加模型"), systemImage: "plus.circle")
-        }
-        .buttonStyle(.borderless)
-    }
 
     private var modelOptions: [String] {
         guard let provider = model.activeProvider else { return [] }
