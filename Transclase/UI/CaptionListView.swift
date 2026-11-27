@@ -6,15 +6,6 @@ struct CaptionListView: View {
     @State private var userIsScrolling = false
     private let bottomID = "caption-bottom"
 
-    private func followIfPinned(_ proxy: ScrollViewProxy) {
-        guard model.isPinnedToBottom, model.settings.autoScroll else { return }
-        DispatchQueue.main.async {
-            withAnimation(.easeOut(duration: 0.18)) {
-                proxy.scrollTo(bottomID, anchor: .bottom)
-            }
-        }
-    }
-
     var body: some View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
@@ -38,16 +29,10 @@ struct CaptionListView: View {
                     .frame(minHeight: geometry.size.height, alignment: .bottom)
                 }
                 .onChange(of: model.scrollGeneration) { _, _ in
-                    followIfPinned(proxy)
-                }
-                .onChange(of: transcript.captions.count) { _, _ in
-                    followIfPinned(proxy)
-                }
-                .onChange(of: model.captions.last?.target) { _, _ in
-                    followIfPinned(proxy)
-                }
-                .onAppear {
-                    proxy.scrollTo(bottomID, anchor: .bottom)
+                    guard model.isPinnedToBottom, model.settings.autoScroll else { return }
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        proxy.scrollTo(bottomID, anchor: .bottom)
+                    }
                 }
                 .mask(alignment: .top) {
                     // Fade the first visible line out under the title bar instead
