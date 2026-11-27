@@ -9,6 +9,7 @@ struct SettingsSheet: View {
     @State private var editingProvider: ModelProvider?
     @State private var showPresetPicker = false
     @State private var pendingCustomProvider = false
+    @State private var draftProvider: ModelProvider?
     @State private var isTestingPlaceholder = false
     @State private var engineTestName = ""
     @State private var engineTestResult: String?

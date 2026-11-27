@@ -1,0 +1,160 @@
+import SwiftUI
+
+/// Edits a provider that does not exist in settings yet. Nothing is added until
+/// the user taps 完成 — cancelling leaves no trace.
+struct ProviderDraftEditor: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var draft: ModelProvider
+    @State private var keyDraft = ""
+    @State private var isTesting = false
+    @State private var testResult: String?
+    @State private var newModelName = ""
+
+    let onSave: (ModelProvider) -> Void
+
+    init(seed: ModelProvider, onSave: @escaping (ModelProvider) -> Void) {
+        _draft = State(initialValue: seed)
+        self.onSave = onSave
+    }
+
+    private var canSave: Bool {
+        !draft.name.trimmingCharacters(in: .whitespaces).isEmpty
+            && !draft.baseURL.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(L("名称"), text: $draft.name,
+                              prompt: Text(L("例如：我的中转")))
+                    TextField(L("接口地址"), text: $draft.baseURL,
+                              prompt: Text("https://api.example.com/v1"))
+                        .autocorrectionDisabled()
+                        .textContentType(.URL)
+                } footer: {
+                    Text(L("填 OpenAI 兼容地址，通常以 /v1 结尾。"))
+                }
+
+                Section {
+                    ForEach(draft.models, id: \.self) { name in
+                        HStack {
+                            Button {
+                                draft.model = name
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: name == draft.model
+                                          ? "largecircle.fill.circle" : "circle")
+                                        .foregroundStyle(name == draft.model
+                                                         ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                                    Text(name).foregroundStyle(.primary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            Spacer()
+
+                            if draft.models.count > 1 {
+                                Button {
+                                    draft.models.removeAll { $0 == name }
+                                    if draft.model == name { draft.model = draft.models.first ?? "" }
+                                } label: {
+                                    Image(systemName: "minus.circle")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        TextField(L("新模型名称"), text: $newModelName)
+                            .textFieldStyle(.roundedBorder)
+                            .autocorrectionDisabled()
+                        Button(L("添加")) {
+                            let trimmed = newModelName.trimmingCharacters(in: .whitespaces)
+                            guard !trimmed.isEmpty else { return }
+                            if !draft.models.contains(trimmed) { draft.models.append(trimmed) }
+                            if draft.model.isEmpty { draft.model = trimmed }
+                            newModelName = ""
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(newModelName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                } header: {
+                    Text(L("模型"))
+                } footer: {
+                    if draft.models.isEmpty {
+                        Text(L("先添加一个模型名称，例如 gpt-4o-mini 或 deepseek-chat。"))
+                    }
+                }
+
+                Section {
+                    SecureField(L("API Key"), text: $keyDraft,
+                                prompt: Text(L("粘贴供应商提供的 Key")))
+                        .autocorrectionDisabled()
+                        .onChange(of: keyDraft) { _, value in
+                            model.saveProviderKey(draft, key: value)
+                        }
+
+                    if !draft.apiKeyURL.isEmpty, let url = URL(string: draft.apiKeyURL) {
+                        Link(destination: url) {
+                            Label(L("获取 API Key"), systemImage: "arrow.up.right.square")
+                        }
+                    }
+
+                    Button {
+                        testResult = nil
+                        isTesting = true
+                        Task {
+                            testResult = await model.testProvider(draft)
+                            isTesting = false
+                        }
+                    } label: {
+                        HStack {
+                            Text(L("测试 API 连接"))
+                            Spacer()
+                            if isTesting {
+                                ProgressView().controlSize(.mini)
+                            } else if let ok = model.providerStatus[draft.id] {
+                                Circle().fill(ok ? Color.green : Color.red).frame(width: 8, height: 8)
+                            }
+                        }
+                    }
+                    .disabled(isTesting)
+
+                    if let testResult {
+                        Text(testResult)
+                            .font(.caption)
+                            .foregroundStyle(testResult.hasPrefix(L("连接成功"))
+                                             ? AnyShapeStyle(.green) : AnyShapeStyle(.red))
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle(L("新增供应商"))
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            #if os(macOS)
+            .frame(minWidth: 460, idealWidth: 520, minHeight: 460, idealHeight: 600)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L("取消")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L("完成")) {
+                        onSave(draft)
+                        dismiss()
+                    }
+                    .disabled(!canSave)
+                }
+            }
+        }
+    }
+}
