@@ -36,7 +36,6 @@ struct PresetPickerView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L("自定义")) {
                         onCustom()
-                        dismiss()
                     }
                 }
             }
