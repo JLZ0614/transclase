@@ -150,6 +150,66 @@ struct ProviderPreset: Identifiable, Hashable {
             apiKeyURL: "https://cloud.cerebras.ai/platform"
         ),
         ProviderPreset(
+            id: "anthropic", name: "Anthropic Claude",
+            baseURL: "https://api.anthropic.com/v1",
+            models: ["claude-sonnet-4-5", "claude-haiku-4-5"],
+            apiKeyURL: "https://console.anthropic.com/settings/keys"
+        ),
+        ProviderPreset(
+            id: "cohere", name: "Cohere",
+            baseURL: "https://api.cohere.ai/compatibility/v1",
+            models: ["command-r-plus", "command-r"],
+            apiKeyURL: "https://dashboard.cohere.com/api-keys"
+        ),
+        ProviderPreset(
+            id: "ark", name: "字节豆包（火山方舟）",
+            baseURL: "https://ark.cn-beijing.volces.com/api/v3",
+            models: ["doubao-pro-32k", "doubao-lite-128k"],
+            apiKeyURL: "https://console.volcengine.com/ark"
+        ),
+        ProviderPreset(
+            id: "sensenova", name: "商汤日日新",
+            baseURL: "https://api.sensenova.cn/compatible-mode/v1",
+            models: ["SenseChat-5", "SenseChat-Turbo"],
+            apiKeyURL: "https://console.sensecore.cn/"
+        ),
+        ProviderPreset(
+            id: "dashscope-intl", name: "通义千问（国际站）",
+            baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+            models: ["qwen-plus", "qwen-turbo"],
+            apiKeyURL: "https://bailian.console.alibabacloud.com/"
+        ),
+        ProviderPreset(
+            id: "sambanova", name: "SambaNova",
+            baseURL: "https://api.sambanova.ai/v1",
+            models: ["Meta-Llama-3.3-70B-Instruct"],
+            apiKeyURL: "https://cloud.sambanova.ai/apis"
+        ),
+        ProviderPreset(
+            id: "nebius", name: "Nebius",
+            baseURL: "https://api.studio.nebius.ai/v1",
+            models: ["meta-llama/Llama-3.3-70B-Instruct"],
+            apiKeyURL: "https://studio.nebius.ai/"
+        ),
+        ProviderPreset(
+            id: "novita", name: "Novita AI",
+            baseURL: "https://api.novita.ai/v3/openai",
+            models: ["meta-llama/llama-3.3-70b-instruct"],
+            apiKeyURL: "https://novita.ai/settings/key-management"
+        ),
+        ProviderPreset(
+            id: "hyperbolic", name: "Hyperbolic",
+            baseURL: "https://api.hyperbolic.xyz/v1",
+            models: ["meta-llama/Llama-3.3-70B-Instruct"],
+            apiKeyURL: "https://app.hyperbolic.xyz/settings"
+        ),
+        ProviderPreset(
+            id: "lmstudio", name: "本地 LM Studio",
+            baseURL: "http://127.0.0.1:1234/v1",
+            models: ["local-model"],
+            apiKeyURL: "https://lmstudio.ai/"
+        ),
+        ProviderPreset(
             id: "ollama", name: "本地 Ollama",
             baseURL: "http://127.0.0.1:11434/v1",
             models: ["qwen2.5:7b", "llama3.2"],
