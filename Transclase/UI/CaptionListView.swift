@@ -4,6 +4,7 @@ struct CaptionListView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var transcript: TranscriptStore
     @State private var userIsScrolling = false
+    @State private var lastUserScroll = Date.distantPast
     private let bottomID = "caption-bottom"
 
     var body: some View {
@@ -48,20 +49,23 @@ struct CaptionListView: View {
                     )
                 }
                 .onScrollPhaseChange { _, newPhase in
-                    userIsScrolling = (newPhase == .interacting || newPhase == .tracking)
+                    let dragging = (newPhase == .interacting || newPhase == .tracking)
+                    userIsScrolling = dragging
+                    if dragging { lastUserScroll = Date() }
                 }
-                .onScrollGeometryChange(for: Bool.self) { scrollGeometry in
-                    let distance = scrollGeometry.contentSize.height
-                        - scrollGeometry.contentOffset.y
-                        - scrollGeometry.containerSize.height
-                    return distance < 90
-                } action: { _, atBottom in
-                    // Only a real drag may unpin the list. Letting content growth
-                    // unpin it would race with the auto-scroll above and stop
-                    // following the speaker forever.
-                    if atBottom {
+                .onScrollGeometryChange(for: ScrollMetrics.self) { geometry in
+                    ScrollMetrics(
+                        distance: geometry.contentSize.height
+                            - geometry.contentOffset.y
+                            - geometry.containerSize.height
+                    )
+                } action: { _, metrics in
+                    // Content growth also changes `distance`; only a *recent user
+                    // gesture* may unpin, otherwise a full page stops following.
+                    if metrics.distance < 90 {
                         model.isPinnedToBottom = true
-                    } else if userIsScrolling {
+                    } else if Date().timeIntervalSince(lastUserScroll) < 1.5,
+                              metrics.distance > 240 {
                         model.isPinnedToBottom = false
                     }
                 }
@@ -143,4 +147,9 @@ struct CaptionRow: View {
         .animation(.easeOut(duration: 0.16), value: caption.target)
         .animation(.easeOut(duration: 0.16), value: caption.isFinal)
     }
+}
+
+
+private struct ScrollMetrics: Equatable {
+    let distance: CGFloat
 }
