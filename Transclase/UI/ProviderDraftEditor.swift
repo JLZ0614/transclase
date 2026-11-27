@@ -21,14 +21,6 @@ struct ProviderDraftEditor: View {
 
     /// A provider without a model cannot translate anything, so它 isn't
     /// allowed to be saved.
-    /// Same proportions as the settings sheet.
-    private var sheetSize: CGSize {
-        let window = model.windowSize
-        let width = min(max(460, window.width * 0.72), min(640, window.width - 60))
-        let height = min(max(360, window.height * 0.78), min(560, window.height - 90))
-        return CGSize(width: width, height: height)
-    }
-
     private var canSave: Bool {
         !draft.name.trimmingCharacters(in: .whitespaces).isEmpty
             && !draft.model.trimmingCharacters(in: .whitespaces).isEmpty
@@ -176,7 +168,7 @@ struct ProviderDraftEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             #if os(macOS)
-            .frame(width: sheetSize.width, height: sheetSize.height)
+            .frame(minWidth: 560, idealWidth: 620, minHeight: 420, idealHeight: 520)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
