@@ -25,8 +25,14 @@ struct ModelProvider: Identifiable, Codable, Equatable, Hashable {
         self.name = name
         self.baseURL = baseURL
         self.model = model
-        self.models = models.isEmpty ? [model] : models
-        if !self.models.contains(model) { self.models.insert(model, at: 0) }
+        // A custom provider starts empty until the user adds a model name;
+        // forcing an empty-string entry made the editor look broken.
+        if models.isEmpty, !model.isEmpty {
+            self.models = [model]
+        } else {
+            self.models = models
+        }
+        if !model.isEmpty, !self.models.contains(model) { self.models.insert(model, at: 0) }
         self.apiKeyURL = apiKeyURL
     }
 

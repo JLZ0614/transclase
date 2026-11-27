@@ -827,7 +827,10 @@ final class AppModel: ObservableObject {
         if !settings.providers[index].models.contains(trimmed) {
             settings.providers[index].models.append(trimmed)
         }
-        settings.providers[index].model = trimmed
+        // First model added to an empty provider becomes the selected one.
+        if settings.providers[index].model.isEmpty {
+            settings.providers[index].model = trimmed
+        }
     }
 
     func removeModel(_ name: String, from providerID: UUID) {

@@ -87,6 +87,11 @@ struct ProviderEditorView: View {
                         }
                         .disabled(model.settings.providers.count <= 1)
                     }
+                } else {
+                    Section {
+                        Text(L("这个供应商已被删除。"))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .formStyle(.grouped)
