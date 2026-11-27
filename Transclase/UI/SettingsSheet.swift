@@ -1,13 +1,26 @@
 import SwiftUI
 
 /// 「设置」是唯一的配置入口：翻译引擎、模型服务商、显示、行为、助手、关于。
+/// One sheet state for both "edit existing" and "create new" — two separate
+/// `.sheet` modifiers on the same view can silently swallow one another.
+enum ProviderSheet: Identifiable {
+    case editor(ModelProvider)
+    case draft(ModelProvider)
+
+    var id: String {
+        switch self {
+        case .editor(let provider): "editor-\(provider.id)"
+        case .draft(let seed): "draft-\(seed.id)"
+        }
+    }
+}
+
 struct SettingsSheet: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var isTesting = false
-    @State private var editingProvider: ModelProvider?
-    @State private var draftProvider: ModelProvider?
+    @State private var providerSheet: ProviderSheet?
     @State private var isTestingPlaceholder = false
     @State private var engineTestName = ""
     @State private var engineTestResult: String?
@@ -53,8 +66,20 @@ struct SettingsSheet: View {
                 }
             }
             .task { await model.testAllProviders() }
-            .sheet(item: $editingProvider) { provider in
-                ProviderEditorView(providerID: provider.id).environmentObject(model)
+            .sheet(item: $providerSheet) { sheet in
+                switch sheet {
+                case .editor(let provider):
+                    ProviderEditorView(providerID: provider.id)
+                        .environmentObject(model)
+                case .draft(let seed):
+                    ProviderDraftEditor(seed: seed) { provider in
+                        model.settings.providers.append(provider)
+                        model.settings.activeProviderID = provider.id
+                        model.settings.translationEngine = .cloud
+                        providerSheet = nil
+                    }
+                    .environmentObject(model)
+                }
             }
         }
         #if os(macOS)
@@ -126,14 +151,15 @@ struct SettingsSheet: View {
 
                     Spacer(minLength: 8)
 
-                    Button(L("编辑")) { editingProvider = provider }
+                    Button(L("编辑")) { providerSheet = .editor(provider) }
                         .buttonStyle(.borderless)
                         .disabled(model.isRunning)
                 }
             }
 
             Button {
-                draftProvider = ModelProvider(name: "", baseURL: "", model: "", models: [])
+                providerSheet = .draft(ModelProvider(name: "", baseURL: "",
+                                                    model: "", models: []))
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")
