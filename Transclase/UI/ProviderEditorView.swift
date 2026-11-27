@@ -109,6 +109,9 @@ struct ProviderEditorView: View {
             #if os(macOS)
             .frame(width: sheetSize.width, height: sheetSize.height)
             #endif
+            .onDisappear {
+                if let provider { model.saveProviderKey(provider, key: keyDraft) }
+            }
             .onAppear {
                 if let provider { keyDraft = model.providerKey(provider) ?? "" }
             }

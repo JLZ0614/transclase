@@ -53,6 +53,17 @@ enum CredentialStore {
         guard !loaded else { return }
         loaded = true
 
+        #if os(iOS)
+        // Keychain first: it survives a wiped sandbox container, which is the
+        // most likely reason keys vanished between launches.
+        if let data = keychainRead(),
+           let dict = try? JSONDecoder().decode([String: String].self, from: data),
+           !dict.isEmpty {
+            cache = dict
+            return
+        }
+        #endif
+
         if let data = try? Data(contentsOf: fileURL),
            let dict = try? JSONDecoder().decode([String: String].self, from: data) {
             cache = dict
@@ -88,7 +99,44 @@ enum CredentialStore {
         } catch {
             // Keep the in-memory cache; the next save will retry.
         }
+
+        #if os(iOS)
+        // Mirror into the Keychain so a container reset cannot lose the keys.
+        keychainWrite(data)
+        #endif
     }
+
+    #if os(iOS)
+    private static func keychainQuery() -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "com.transclase.vault",
+            kSecAttrAccount as String: "cleartext",
+        ]
+    }
+
+    private static func keychainRead() -> Data? {
+        var query = keychainQuery()
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess else { return nil }
+        return item as? Data
+    }
+
+    private static func keychainWrite(_ data: Data) {
+        let query = keychainQuery()
+        let status = SecItemCopyMatching(keychainQuery() as CFDictionary, nil)
+        if status == errSecSuccess {
+            SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        } else {
+            var item = query
+            item[kSecValueData as String] = data
+            item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            SecItemAdd(item as CFDictionary, nil)
+        }
+    }
+    #endif
 
     // MARK: - Keychain migration
 
