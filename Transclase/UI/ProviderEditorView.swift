@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Editor for one provider. Flat form: name, address, model list, key, test.
-/// No nested menus — every action is a visible row.
+/// Editor for one provider: the only place that changes name, address, model or
+/// the API key. Mirrors the model-provider sheet in DeepSeek Harness.
 struct ProviderEditorView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -38,8 +38,38 @@ struct ProviderEditorView: View {
                             .autocorrectionDisabled()
                     }
 
-                    Section(L("模型")) {
-                        modelList(provider)
+                    Section {
+                        Menu {
+                            ForEach(provider.models, id: \.self) { name in
+                                Button {
+                                    setModel(name)
+                                } label: {
+                                    if name == provider.model {
+                                        Label(name, systemImage: "checkmark")
+                                    } else {
+                                        Text(name)
+                                    }
+                                }
+                            }
+                            Divider()
+                            Button {
+                                newModelName = ""
+                                showNewModel = true
+                            } label: {
+                                Label(L("添加模型"), systemImage: "plus")
+                            }
+                            if provider.models.count > 1 {
+                                Menu(L("删除模型")) {
+                                    ForEach(provider.models, id: \.self) { name in
+                                        Button(name, role: .destructive) {
+                                            model.removeModel(name, from: providerID)
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            LabeledContent(L("模型"), value: provider.model)
+                        }
                     }
 
                     Section {
@@ -55,7 +85,27 @@ struct ProviderEditorView: View {
                             }
                         }
 
-                        testButton(provider)
+                        Button {
+                            testResult = nil
+                            isTesting = true
+                            Task {
+                                testResult = await model.testProvider(provider)
+                                isTesting = false
+                            }
+                        } label: {
+                            HStack {
+                                Text(L("测试 API 连接"))
+                                Spacer()
+                                if isTesting {
+                                    ProgressView().controlSize(.mini)
+                                } else if let ok = model.providerStatus[providerID] {
+                                    Circle()
+                                        .fill(ok ? Color.green : Color.red)
+                                        .frame(width: 8, height: 8)
+                                }
+                            }
+                        }
+                        .disabled(isTesting)
 
                         if let testResult {
                             Text(testResult)
@@ -78,7 +128,9 @@ struct ProviderEditorView: View {
                 }
             }
             .onAppear {
-                if let provider { keyDraft = model.providerKey(provider) ?? "" }
+                if let provider {
+                    keyDraft = model.providerKey(provider) ?? ""
+                }
             }
             .alert(L("添加模型"), isPresented: $showNewModel) {
                 TextField(L("模型名称"), text: $newModelName)
@@ -89,73 +141,6 @@ struct ProviderEditorView: View {
                 }
             }
         }
-    }
-
-    @ViewBuilder
-    private func modelList(_ provider: ModelProvider) -> some View {
-        ForEach(provider.models, id: \.self) { name in
-            HStack {
-                Button {
-                    setModel(name)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: name == provider.model
-                              ? "largecircle.fill.circle" : "circle")
-                            .foregroundStyle(name == provider.model
-                                             ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-                        Text(name)
-                            .foregroundStyle(.primary)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                if provider.models.count > 1 {
-                    Button {
-                        model.removeModel(name, from: providerID)
-                    } label: {
-                        Image(systemName: "minus.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                }
-            }
-        }
-
-        Button {
-            newModelName = ""
-            showNewModel = true
-        } label: {
-            Label(L("添加模型"), systemImage: "plus.circle")
-        }
-        .buttonStyle(.borderless)
-    }
-
-    @ViewBuilder
-    private func testButton(_ provider: ModelProvider) -> some View {
-        Button {
-            testResult = nil
-            isTesting = true
-            Task {
-                testResult = await model.testProvider(provider)
-                isTesting = false
-            }
-        } label: {
-            HStack {
-                Text(L("测试 API 连接"))
-                Spacer()
-                if isTesting {
-                    ProgressView().controlSize(.mini)
-                } else if let ok = model.providerStatus[providerID] {
-                    Circle()
-                        .fill(ok ? Color.green : Color.red)
-                        .frame(width: 8, height: 8)
-                }
-            }
-        }
-        .disabled(isTesting)
     }
 
     private func setModel(_ name: String) {
