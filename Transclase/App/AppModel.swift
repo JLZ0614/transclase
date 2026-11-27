@@ -101,6 +101,12 @@ final class AppModel: ObservableObject {
 
     init() {
         settings = AppSettings.load()
+        // Demo mode is a temporary flag (env var or the demo button), never a
+        // persisted preference — a stuck `true` used to trap the app in demo.
+        if settings.demoMode {
+            settings.demoMode = false
+            settings.save()
+        }
         pipeline.onCaptionsChanged = { [weak self] captions in
             guard let self else { return }
             self.captions = captions
