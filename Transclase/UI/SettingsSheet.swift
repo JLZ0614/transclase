@@ -281,9 +281,6 @@ struct SettingsSheet: View {
     private var aboutSection: some View {
         Section(L("关于")) {
             LabeledContent(L("版本"), value: version)
-            if model.settings.translationEngine == .apple {
-                LabeledContent(L("实际策略"), value: model.effectiveTranslationStrategy)
-            }
         }
     }
 
