@@ -53,11 +53,30 @@ enum CredentialStore {
         guard !loaded else { return }
         loaded = true
 
+        #if os(iOS)
+        // iOS keeps the whole dictionary in the Keychain: the app has a stable
+        // identifier there, so it survives relaunches and reinstalls.
+        if let data = keychainRead(),
+           let dict = try? JSONDecoder().decode([String: String].self, from: data) {
+            cache = dict
+            return
+        }
+        // Migrate the sandbox file written by earlier builds.
+        if let data = try? Data(contentsOf: fileURL),
+           let dict = try? JSONDecoder().decode([String: String].self, from: data),
+           !dict.isEmpty {
+            cache = dict
+            persist()
+            try? FileManager.default.removeItem(at: fileURL)
+            return
+        }
+        #else
         if let data = try? Data(contentsOf: fileURL),
            let dict = try? JSONDecoder().decode([String: String].self, from: data) {
             cache = dict
             return
         }
+        #endif
 
         // One-off rescue of keys written to the Keychain by 1.6.x.
         if let migrated = migrateFromKeychain(), !migrated.isEmpty {
@@ -67,6 +86,11 @@ enum CredentialStore {
     }
 
     private static func persist() {
+        #if os(iOS)
+        guard let data = try? JSONEncoder().encode(cache) else { return }
+        keychainWrite(data)
+        return
+        #else
         let fm = FileManager.default
         let directory = fileURL.deletingLastPathComponent()
         try? fm.createDirectory(
@@ -88,7 +112,38 @@ enum CredentialStore {
         } catch {
             // Keep the in-memory cache; the next save will retry.
         }
+        #endif
     }
+
+    // MARK: - Keychain (iOS)
+
+    #if os(iOS)
+    private static func keychainQuery() -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "com.transclase.vault",
+            kSecAttrAccount as String: "cleartext",
+        ]
+    }
+
+    private static func keychainRead() -> Data? {
+        var query = keychainQuery()
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess else { return nil }
+        return item as? Data
+    }
+
+    private static func keychainWrite(_ data: Data) {
+        let query = keychainQuery()
+        SecItemDelete(query as CFDictionary)
+        var item = query
+        item[kSecValueData as String] = data
+        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        SecItemAdd(item as CFDictionary, nil)
+    }
+    #endif
 
     // MARK: - Keychain migration
 
