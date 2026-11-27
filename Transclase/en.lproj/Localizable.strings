@@ -135,6 +135,12 @@
 "在访达中显示" = "Show in Finder";
 "还没有课堂记录" = "No sessions yet";
 "麦克风音量" = "Microphone volume";
+"使用翻译助手需要先添加模型 API" = "The assistant needs a model API first";
+"打开「设置 → 翻译模型」" = "Open Settings → Translation model";
+"点「添加模型供应商」" = "Tap \"Add provider\"";
+"选择厂商（如 DeepSeek）并填入 API Key" = "Pick a vendor (e.g. DeepSeek) and paste the API key";
+"点「测试 API 连接」确认成功后完成" = "Tap \"Test API connection\" and finish once it succeeds";
+"完成后即可在此总结要点、提问课堂内容。" = "Then you can summarise and ask about the lecture here.";
 "笔记" = "Note";
 "语音笔记" = "Voice notes";
 "仅转写" = "Transcription only";

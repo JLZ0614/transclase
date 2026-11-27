@@ -135,6 +135,12 @@
 "在访达中显示" = "Afficher dans le Finder";
 "还没有课堂记录" = "Aucun cours dans l'historique";
 "麦克风音量" = "Volume du microphone";
+"使用翻译助手需要先添加模型 API" = "L'assistant nécessite une API de modèle";
+"打开「设置 → 翻译模型」" = "Ouvrez Réglages → Modèle de traduction";
+"点「添加模型供应商」" = "Appuyez sur \"Ajouter un fournisseur\"";
+"选择厂商（如 DeepSeek）并填入 API Key" = "Choisissez un fournisseur (ex. DeepSeek) et collez la clé API";
+"点「测试 API 连接」确认成功后完成" = "Appuyez sur \"Tester la connexion\" puis validez";
+"完成后即可在此总结要点、提问课堂内容。" = "Vous pourrez ensuite résumer et poser des questions ici.";
 "笔记" = "Note";
 "语音笔记" = "Notes vocales";
 "仅转写" = "Transcription seule";

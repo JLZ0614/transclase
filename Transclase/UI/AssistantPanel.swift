@@ -146,17 +146,34 @@ struct AssistantPanel: View {
     }
 
     private var placeholder: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(L("要点会出现在这里"))
-                .font(.system(size: 12, weight: .medium))
-            Text(L("上课时点「总结」，或打开自动总结（1–10 分钟）。"))
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L("使用翻译助手需要先添加模型 API"))
+                .font(.system(size: 13, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 4) {
+                step(1, L("打开「设置 → 翻译模型」"))
+                step(2, L("点「添加模型供应商」"))
+                step(3, L("选择厂商（如 DeepSeek）并填入 API Key"))
+                step(4, L("点「测试 API 连接」确认成功后完成"))
+            }
+
+            Text(L("完成后即可在此总结要点、提问课堂内容。"))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
-            Text(L("也可以直接在下面提问。"))
+                .padding(.top, 2)
+        }
+        .padding(.top, 16)
+    }
+
+    private func step(_ index: Int, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("\(index).")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.tertiary)
+            Text(text)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
-        .padding(.top, 16)
     }
 
     private func submit() {
