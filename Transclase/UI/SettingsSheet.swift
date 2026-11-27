@@ -6,6 +6,7 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isTesting = false
+    @State private var editingProvider: ModelProvider?
     @State private var engineTestName = ""
     @State private var engineTestResult: String?
     @State private var showNewModel = false
@@ -25,7 +26,7 @@ struct SettingsSheet: View {
     private var sheetSize: CGSize {
         let window = model.windowSize
         let width = min(max(460, window.width * 0.72), min(640, window.width - 60))
-        let height = min(max(360, window.height * 0.78), min(560, window.height - 90))
+        let height = min(max(420, window.height * 0.9), min(680, window.height - 60))
         return CGSize(width: width, height: height)
     }
 
@@ -144,15 +145,15 @@ struct SettingsSheet: View {
                         model.settings.translationEngine = .cloud
                     }
 
+                    Circle()
+                        .fill(dotColor(for: provider))
+                        .frame(width: 8, height: 8)
+
                     Spacer(minLength: 8)
 
-                    Button(L("测试")) {
-                        engineTestName = provider.name
-                        engineTestResult = nil
-                        Task { engineTestResult = await model.testProvider(provider) }
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(model.isRunning)
+                    Button(L("编辑")) { editingProvider = provider }
+                        .buttonStyle(.borderless)
+                        .disabled(model.isRunning)
                 }
             }
 
@@ -186,56 +187,17 @@ struct SettingsSheet: View {
 
     private var providerSection: some View {
         Section {
-            Picker(L("服务商"), selection: $model.settings.activeProviderID) {
-                ForEach(model.settings.providers) { provider in
-                    Text(provider.name).tag(Optional(provider.id))
-                }
-            }
-            .disabled(model.isRunning)
-
-            if let provider = model.activeProvider {
-                SecureField("API Key", text: $keyDraft)
-                    .textFieldStyle(.roundedBorder)
-                    .autocorrectionDisabled()
-
-                if let urlString = provider.apiKeyURL.isEmpty ? nil : provider.apiKeyURL,
-                   let url = URL(string: urlString) {
-                    Link(destination: url) {
-                        Label(L("获取 API Key"), systemImage: "arrow.up.right.square")
+            ForEach(model.settings.providers) { provider in
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(dotColor(for: provider))
+                        .frame(width: 8, height: 8)
+                    Text(provider.name)
+                    Spacer()
+                    Button(L("编辑")) {
+                        editingProvider = provider
                     }
-                }
-
-                modelRows(for: provider)
-
-                Button {
-                    testResult = nil
-                    isTesting = true
-                    Task {
-                        testResult = await model.testProvider(provider)
-                        isTesting = false
-                    }
-                } label: {
-                    HStack {
-                        Text(L("测试 API 连接"))
-                        Spacer()
-                        if isTesting { ProgressView().controlSize(.mini) }
-                    }
-                }
-                .disabled(isTesting)
-
-                if let testResult {
-                    Text(testResult)
-                        .font(.caption)
-                        .foregroundStyle(testResult.hasPrefix(L("连接成功"))
-                                         ? AnyShapeStyle(.green) : AnyShapeStyle(.red))
-                        .textSelection(.enabled)
-                }
-
-                if provider.apiKeyURL.isEmpty {
-                    TextField(L("名称"), text: providerBinding(\.name, fallback: ""))
-                        .textFieldStyle(.roundedBorder)
-                    TextField(L("地址"), text: providerBinding(\.baseURL, fallback: ""))
-                        .textFieldStyle(.roundedBorder)
+                    .buttonStyle(.borderless)
                 }
             }
 
@@ -243,56 +205,31 @@ struct SettingsSheet: View {
                 ForEach(ProviderPreset.all) { preset in
                     Button(preset.name) { addProvider(preset) }
                 }
-                Divider()
-                Button(L("自定义服务商")) { addProvider(nil) }
             } label: {
-                Label(L("添加模型服务商"), systemImage: "plus")
+                Label(L("添加供应商"), systemImage: "plus")
             }
 
-            Button(role: .destructive) {
-                removeActiveProvider()
+            Button {
+                addProvider(nil)
+                if let added = model.activeProvider { editingProvider = added }
             } label: {
-                Label(L("删除当前服务商"), systemImage: "minus")
+                Label(L("自定义供应商"), systemImage: "square.and.pencil")
             }
-            .disabled(model.settings.providers.count <= 1)
         } header: {
             Text(L("模型服务商"))
         }
+        .sheet(item: $editingProvider) { provider in
+            ProviderEditorView(providerID: provider.id)
+                .environmentObject(model)
+        }
     }
 
-    /// Model list for one provider: pick one, add new ones, delete the extras.
-    @ViewBuilder
-    private func modelRows(for provider: ModelProvider) -> some View {
-        Picker(L("模型"), selection: providerBinding(\.model, fallback: "")) {
-            ForEach(provider.models, id: \.self) { Text($0).tag($0) }
+    private func dotColor(for provider: ModelProvider) -> Color {
+        switch model.providerStatus[provider.id] {
+        case .some(true): return .green
+        case .some(false): return .red
+        case .none: return Color.secondary.opacity(0.35)
         }
-        .disabled(model.isRunning)
-
-        ForEach(provider.models, id: \.self) { name in
-            if name != provider.models.first || provider.models.count > 1 {
-                HStack {
-                    Text(name)
-                        .foregroundStyle(name == provider.model ? .primary : .secondary)
-                    Spacer()
-                    Button {
-                        model.removeModel(name, from: provider.id)
-                    } label: {
-                        Image(systemName: "minus.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                    .disabled(provider.models.count <= 1)
-                }
-            }
-        }
-
-        Button {
-            newModelName = ""
-            showNewModel = true
-        } label: {
-            Label(L("添加模型"), systemImage: "plus.circle")
-        }
-        .buttonStyle(.borderless)
     }
 
     private var modelOptions: [String] {
