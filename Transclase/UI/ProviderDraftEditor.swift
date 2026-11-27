@@ -23,7 +23,6 @@ struct ProviderDraftEditor: View {
     /// allowed to be saved.
     private var canSave: Bool {
         !draft.name.trimmingCharacters(in: .whitespaces).isEmpty
-            && !draft.baseURL.trimmingCharacters(in: .whitespaces).isEmpty
             && !draft.model.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
@@ -47,14 +46,21 @@ struct ProviderDraftEditor: View {
                 }
 
                 Section {
-                    TextField(L("名称"), text: $draft.name,
-                              prompt: Text(L("例如：我的中转")))
-                    TextField(L("接口地址"), text: $draft.baseURL,
-                              prompt: Text("https://api.example.com/v1"))
-                        .autocorrectionDisabled()
-                        .textContentType(.URL)
+                    LabeledContent(L("名称")) {
+                        TextField("", text: $draft.name,
+                                  prompt: Text(L("必填")).foregroundStyle(.tertiary))
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    LabeledContent(L("接口地址")) {
+                        TextField("", text: $draft.baseURL,
+                                  prompt: Text("https://api.example.com/v1").foregroundStyle(.tertiary))
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textContentType(.URL)
+                    }
                 } footer: {
-                    Text(L("填 OpenAI 兼容地址，通常以 /v1 结尾。"))
+                    Text(L("接口地址可留空，使用官方默认地址；自定义中转需填 OpenAI 兼容地址，通常以 /v1 结尾。"))
                 }
 
                 Section {
@@ -162,7 +168,7 @@ struct ProviderDraftEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             #if os(macOS)
-            .frame(minWidth: 460, idealWidth: 520, minHeight: 460, idealHeight: 600)
+            .frame(minWidth: 560, idealWidth: 620, minHeight: 420, idealHeight: 520)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -170,7 +176,13 @@ struct ProviderDraftEditor: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L("完成")) {
-                        onSave(draft)
+                        var final = draft
+                        // Empty address is fine when the name matches a preset.
+                        if final.baseURL.trimmingCharacters(in: .whitespaces).isEmpty,
+                           let preset = ProviderPreset.all.first(where: { $0.name == final.name }) {
+                            final.baseURL = preset.baseURL
+                        }
+                        onSave(final)
                         dismiss()
                     }
                     .disabled(!canSave)
