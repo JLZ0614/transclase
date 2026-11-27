@@ -32,17 +32,31 @@ struct ProviderEditorView: View {
             Form {
                 if let provider {
                     Section {
-                        TextField(L("名称"), text: binding(\.name))
-                        TextField(L("地址"), text: binding(\.baseURL))
+                        TextField(L("名称"), text: binding(\.name),
+                                  prompt: Text(L("例如：我的中转")))
+                        TextField(L("接口地址"), text: binding(\.baseURL),
+                                  prompt: Text("https://api.example.com/v1"))
                             .autocorrectionDisabled()
-                    }
-
-                    Section(L("模型")) {
-                        modelList(provider)
+                            .textContentType(.URL)
+                    } footer: {
+                        if provider.apiKeyURL.isEmpty {
+                            Text(L("填 OpenAI 兼容地址，通常以 /v1 结尾。保存后可在上方点「测试 API 连接」验证。"))
+                        }
                     }
 
                     Section {
-                        SecureField("API Key", text: $keyDraft)
+                        modelList(provider)
+                    } header: {
+                        Text(L("模型"))
+                    } footer: {
+                        if provider.models.isEmpty {
+                            Text(L("先添加一个模型名称，例如 gpt-4o-mini 或 deepseek-chat。"))
+                        }
+                    }
+
+                    Section {
+                        SecureField(L("API Key"), text: $keyDraft,
+                                    prompt: Text(L("粘贴供应商提供的 Key")))
                             .autocorrectionDisabled()
                             .onChange(of: keyDraft) { _, value in
                                 model.saveProviderKey(provider, key: value)

@@ -4,6 +4,8 @@ import SwiftUI
 struct PresetPickerView: View {
     @Environment(\.dismiss) private var dismiss
     let onPick: (ProviderPreset) -> Void
+    /// Called when the user wants an endpoint that is not in the list.
+    var onCustom: () -> Void = {}
 
     var body: some View {
         NavigationStack {
@@ -32,7 +34,10 @@ struct PresetPickerView: View {
                     Button(L("取消")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(L("自定义")) { dismiss() }
+                    Button(L("自定义")) {
+                        onCustom()
+                        dismiss()
+                    }
                 }
             }
         }
