@@ -19,9 +19,12 @@ struct ProviderDraftEditor: View {
         self.onSave = onSave
     }
 
+    /// A provider without a model cannot translate anything, so它 isn't
+    /// allowed to be saved.
     private var canSave: Bool {
         !draft.name.trimmingCharacters(in: .whitespaces).isEmpty
             && !draft.baseURL.trimmingCharacters(in: .whitespaces).isEmpty
+            && !draft.model.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {
@@ -89,6 +92,8 @@ struct ProviderDraftEditor: View {
                 } footer: {
                     if draft.models.isEmpty {
                         Text(L("先添加一个模型名称，例如 gpt-4o-mini 或 deepseek-chat。"))
+                    } else if draft.model.trimmingCharacters(in: .whitespaces).isEmpty {
+                        Text(L("请选择一个模型。"))
                     }
                 }
 
