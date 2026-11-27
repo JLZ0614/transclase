@@ -14,7 +14,7 @@ struct TransclaseApp: App {
                 .environmentObject(model)
         }
         #if os(macOS)
-        .defaultSize(width: 1180, height: 760)
+        .defaultSize(width: 1280, height: 840)
         #endif
     }
 }

@@ -39,10 +39,7 @@ struct SettingsSheet: View {
     /// A sheet must never exceed its parent window — clamp to the window minus a
     /// margin, whatever the window's current size is.
     private var sheetSize: CGSize {
-        let window = model.windowSize
-        let width = min(max(460, window.width * 0.72), min(640, window.width - 60))
-        let height = min(max(360, window.height * 0.78), min(560, window.height - 90))
-        return CGSize(width: width, height: height)
+        SheetMetrics.size(for: model.windowSize)
     }
 
     var body: some View {
