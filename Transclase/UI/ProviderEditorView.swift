@@ -12,6 +12,13 @@ struct ProviderEditorView: View {
     @State private var testResult: String?
     @State private var newModelName = ""
 
+    private var sheetSize: CGSize {
+        let window = model.windowSize
+        let width = min(max(460, window.width * 0.72), min(640, window.width - 60))
+        let height = min(max(360, window.height * 0.78), min(560, window.height - 90))
+        return CGSize(width: width, height: height)
+    }
+
     private var provider: ModelProvider? {
         model.settings.providers.first { $0.id == providerID }
     }
@@ -105,7 +112,7 @@ struct ProviderEditorView: View {
                 }
             }
             #if os(macOS)
-            .frame(minWidth: 460, idealWidth: 520, minHeight: 420, idealHeight: 560)
+            .frame(width: sheetSize.width, height: sheetSize.height)
             #endif
             .onAppear {
                 if let provider { keyDraft = model.providerKey(provider) ?? "" }
