@@ -7,8 +7,6 @@ struct SettingsSheet: View {
 
     @State private var isTesting = false
     @State private var editingProvider: ModelProvider?
-    @State private var showPresetPicker = false
-    @State private var pendingCustomProvider = false
     @State private var draftProvider: ModelProvider?
     @State private var isTestingPlaceholder = false
     @State private var engineTestName = ""
@@ -57,13 +55,6 @@ struct SettingsSheet: View {
             .task { await model.testAllProviders() }
             .sheet(item: $editingProvider) { provider in
                 ProviderEditorView(providerID: provider.id).environmentObject(model)
-            }
-            .sheet(isPresented: $showPresetPicker) {
-                PresetPickerView { preset in
-                    addProvider(preset)
-                    showPresetPicker = false
-                }
-                .environmentObject(model)
             }
         }
         #if os(macOS)
@@ -142,7 +133,7 @@ struct SettingsSheet: View {
             }
 
             Button {
-                showPresetPicker = true
+                draftProvider = ModelProvider(name: "", baseURL: "", model: "", models: [])
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")

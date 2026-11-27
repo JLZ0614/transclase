@@ -31,6 +31,22 @@ struct ProviderDraftEditor: View {
         NavigationStack {
             Form {
                 Section {
+                    Menu {
+                        ForEach(ProviderPreset.all) { preset in
+                            Button(preset.name) {
+                                draft.name = preset.name
+                                draft.baseURL = preset.baseURL
+                                draft.models = preset.models
+                                draft.model = preset.models.first ?? ""
+                                draft.apiKeyURL = preset.apiKeyURL
+                            }
+                        }
+                    } label: {
+                        LabeledContent(L("从预设填充"), value: draft.name.isEmpty ? L("选择厂商") : draft.name)
+                    }
+                }
+
+                Section {
                     TextField(L("名称"), text: $draft.name,
                               prompt: Text(L("例如：我的中转")))
                     TextField(L("接口地址"), text: $draft.baseURL,
