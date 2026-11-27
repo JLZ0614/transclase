@@ -10,7 +10,6 @@ struct ProviderEditorView: View {
     @State private var keyDraft = ""
     @State private var isTesting = false
     @State private var testResult: String?
-    @State private var showNewModel = false
     @State private var newModelName = ""
 
     private var provider: ModelProvider? {
@@ -89,14 +88,6 @@ struct ProviderEditorView: View {
             .onAppear {
                 if let provider { keyDraft = model.providerKey(provider) ?? "" }
             }
-            .alert(L("添加模型"), isPresented: $showNewModel) {
-                TextField(L("模型名称"), text: $newModelName)
-                Button(L("取消"), role: .cancel) { newModelName = "" }
-                Button(L("添加")) {
-                    model.addModel(newModelName, to: providerID)
-                    newModelName = ""
-                }
-            }
         }
     }
 
@@ -133,13 +124,17 @@ struct ProviderEditorView: View {
             }
         }
 
-        Button {
-            newModelName = ""
-            showNewModel = true
-        } label: {
-            Label(L("添加模型"), systemImage: "plus.circle")
+        HStack(spacing: 8) {
+            TextField(L("新模型名称"), text: $newModelName)
+                .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+            Button(L("添加")) {
+                model.addModel(newModelName, to: providerID)
+                newModelName = ""
+            }
+            .buttonStyle(.borderless)
+            .disabled(newModelName.trimmingCharacters(in: .whitespaces).isEmpty)
         }
-        .buttonStyle(.borderless)
     }
 
     @ViewBuilder

@@ -52,20 +52,21 @@ struct SettingsSheet: View {
                     Button(L("完成")) { dismiss() }
                 }
             }
+            .task { await model.testAllProviders() }
+            .sheet(item: $editingProvider) { provider in
+                ProviderEditorView(providerID: provider.id).environmentObject(model)
+            }
+            .sheet(isPresented: $showPresetPicker) {
+                PresetPickerView { preset in
+                    addProvider(preset)
+                    showPresetPicker = false
+                }
+                .environmentObject(model)
+            }
         }
         #if os(macOS)
         .frame(width: sheetSize.width, height: sheetSize.height)
         #endif
-        .alert(L("添加模型"), isPresented: $showNewModel) {
-            TextField(L("模型名称"), text: $newModelName)
-            Button(L("取消"), role: .cancel) { newModelName = "" }
-            Button(L("添加")) {
-                if let provider = model.activeProvider {
-                    model.addModel(newModelName, to: provider.id)
-                }
-                newModelName = ""
-            }
-        }
         .onAppear {
             if model.settings.activeProviderID == nil {
                 model.settings.activeProviderID = model.settings.providers.first?.id
@@ -150,17 +151,6 @@ struct SettingsSheet: View {
             }
         } header: {
             Text(L("翻译模型"))
-        }
-        .task { await model.testAllProviders() }
-        .sheet(item: $editingProvider) { provider in
-            ProviderEditorView(providerID: provider.id).environmentObject(model)
-        }
-        .sheet(isPresented: $showPresetPicker) {
-            PresetPickerView { preset in
-                addProvider(preset)
-                showPresetPicker = false
-            }
-            .environmentObject(model)
         }
     }
 
