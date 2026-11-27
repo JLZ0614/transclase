@@ -49,6 +49,9 @@ struct CaptionListView: View {
                 .onAppear {
                     proxy.scrollTo(bottomID, anchor: .bottom)
                 }
+                // Keeps the list glued to the newest line as content grows,
+                // which `scrollTo` alone does not guarantee on macOS.
+                .defaultScrollAnchor(.bottom)
                 .mask(alignment: .top) {
                     // Fade the first visible line out under the title bar instead
                     // of letting it collide with the toolbar.
