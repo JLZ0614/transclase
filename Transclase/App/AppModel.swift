@@ -785,6 +785,45 @@ final class AppModel: ObservableObject {
         SessionStore.read(session)
     }
 
+    /// Connection test for one specific provider (used by the engine picker).
+    func testProvider(_ provider: ModelProvider) async -> String {
+        guard let url = URL(string: provider.baseURL), url.scheme != nil else {
+            return L("地址格式不对，需要以 https:// 开头")
+        }
+        if url.scheme == "http", let host = url.host, !Self.isLocalHost(host) {
+            return L("iOS 只允许 https，或局域网地址的 http")
+        }
+        let key = CredentialStore.load("provider.\(provider.id.uuidString)") ?? ""
+        guard !key.isEmpty else { return L("还没有填写 API Key") }
+        do {
+            let ids = try await LLMClient(baseURL: url, model: provider.model, apiKey: key)
+                .listModels(timeout: 12)
+            return String(format: NSLocalizedString("连接成功，可用模型 %d 个", comment: ""), ids.count)
+        } catch {
+            let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return detail
+        }
+    }
+
+    func addModel(_ name: String, to providerID: UUID) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let index = settings.providers.firstIndex(where: { $0.id == providerID }) else { return }
+        if !settings.providers[index].models.contains(trimmed) {
+            settings.providers[index].models.append(trimmed)
+        }
+        settings.providers[index].model = trimmed
+    }
+
+    func removeModel(_ name: String, from providerID: UUID) {
+        guard let index = settings.providers.firstIndex(where: { $0.id == providerID }),
+              settings.providers[index].models.count > 1 else { return }
+        settings.providers[index].models.removeAll { $0 == name }
+        if settings.providers[index].model == name {
+            settings.providers[index].model = settings.providers[index].models.first ?? ""
+        }
+    }
+
     /// Runs a model-list request so the settings screen can report the exact
     /// failure instead of a generic "连接失败".
     func testProviderConnection() async -> String {

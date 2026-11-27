@@ -4,19 +4,57 @@ import Foundation
 /// keyed by `provider.<id>`, so the list itself stays non-secret.
 struct ModelProvider: Identifiable, Codable, Equatable, Hashable {
     var id: UUID = UUID()
-    var name: String = L("新服务商")
+    var name: String = "DeepSeek"
     var baseURL: String = "https://api.deepseek.com/v1"
+    /// Currently selected model.
     var model: String = "deepseek-chat"
+    /// Every model the user keeps for this provider; the picker shows these.
+    var models: [String] = ["deepseek-chat"]
+    /// Where the user creates an API key, shown as a link.
+    var apiKeyURL: String = ""
 
-    static func preset() -> ModelProvider {
-        ModelProvider(name: "DeepSeek", baseURL: "https://api.deepseek.com/v1", model: "deepseek-chat")
+    init(
+        id: UUID = UUID(),
+        name: String,
+        baseURL: String,
+        model: String,
+        models: [String] = [],
+        apiKeyURL: String = ""
+    ) {
+        self.id = id
+        self.name = name
+        self.baseURL = baseURL
+        self.model = model
+        self.models = models.isEmpty ? [model] : models
+        if !self.models.contains(model) { self.models.insert(model, at: 0) }
+        self.apiKeyURL = apiKeyURL
     }
 
-    static func qwen() -> ModelProvider {
+    // Tolerate settings written before `models` / `apiKeyURL` existed.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? "DeepSeek"
+        baseURL = try container.decodeIfPresent(String.self, forKey: .baseURL) ?? ""
+        model = try container.decodeIfPresent(String.self, forKey: .model) ?? ""
+        apiKeyURL = try container.decodeIfPresent(String.self, forKey: .apiKeyURL) ?? ""
+        let stored = try container.decodeIfPresent([String].self, forKey: .models) ?? []
+        models = stored
+        if models.isEmpty, !model.isEmpty { models = [model] }
+        if !model.isEmpty, !models.contains(model) { models.insert(model, at: 0) }
+    }
+
+    static func preset() -> ModelProvider {
+        make(from: ProviderPreset.all[0])
+    }
+
+    static func make(from preset: ProviderPreset) -> ModelProvider {
         ModelProvider(
-            name: L("通义千问"),
-            baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            model: "qwen-plus"
+            name: preset.name,
+            baseURL: preset.baseURL,
+            model: preset.models.first ?? "",
+            models: preset.models,
+            apiKeyURL: preset.apiKeyURL
         )
     }
 }
