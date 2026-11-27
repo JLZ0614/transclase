@@ -80,7 +80,14 @@ enum CredentialStore {
             return
         }
         guard let data = try? JSONEncoder().encode(cache) else { return }
-        fm.createFile(atPath: fileURL.path, contents: data, attributes: [.posixPermissions: 0o600])
+        // `createFile` fails when the file already exists, which silently lost
+        // every key written after the first one. Write atomically instead.
+        do {
+            try data.write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            try? fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+        } catch {
+            // Keep the in-memory cache; the next save will retry.
+        }
     }
 
     // MARK: - Keychain migration
