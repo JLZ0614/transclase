@@ -7,6 +7,7 @@ struct SettingsSheet: View {
 
     @State private var isTesting = false
     @State private var editingProvider: ModelProvider?
+    @State private var showPresetPicker = false
     @State private var engineTestName = ""
     @State private var engineTestResult: String?
     @State private var showNewModel = false
@@ -150,10 +151,6 @@ struct SettingsSheet: View {
                         .frame(width: 8, height: 8)
 
                     Spacer(minLength: 8)
-
-                    Button(L("编辑")) { editingProvider = provider }
-                        .buttonStyle(.borderless)
-                        .disabled(model.isRunning)
                 }
             }
 
@@ -188,23 +185,27 @@ struct SettingsSheet: View {
     private var providerSection: some View {
         Section {
             ForEach(model.settings.providers) { provider in
-                HStack(spacing: 10) {
-                    Circle()
-                        .fill(dotColor(for: provider))
-                        .frame(width: 8, height: 8)
-                    Text(provider.name)
-                    Spacer()
-                    Button(L("编辑")) {
-                        editingProvider = provider
+                Button {
+                    editingProvider = provider
+                } label: {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(dotColor(for: provider))
+                            .frame(width: 8, height: 8)
+                        Text(provider.name)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
                     }
-                    .buttonStyle(.borderless)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
 
-            Menu {
-                ForEach(ProviderPreset.all) { preset in
-                    Button(preset.name) { addProvider(preset) }
-                }
+            Button {
+                showPresetPicker = true
             } label: {
                 Label(L("添加供应商"), systemImage: "plus")
             }
@@ -221,6 +222,13 @@ struct SettingsSheet: View {
         .sheet(item: $editingProvider) { provider in
             ProviderEditorView(providerID: provider.id)
                 .environmentObject(model)
+        }
+        .sheet(isPresented: $showPresetPicker) {
+            PresetPickerView { preset in
+                addProvider(preset)
+                showPresetPicker = false
+            }
+            .environmentObject(model)
         }
     }
 
